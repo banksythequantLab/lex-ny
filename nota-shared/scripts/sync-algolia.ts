@@ -44,18 +44,18 @@ function parseArgs(argv: string[]): Args {
 async function main() {
   const args = parseArgs(process.argv);
 
-  console.log("=== Algolia health check ===");
+  console.log("=== Bootstrapping index settings ===");
+  await algoliaBootstrapIndex();
+  console.log("  searchable_attrs: citation_key, title, law_name, text");
+  console.log("  facets: law_id, jurisdiction, doc_type");
+
+  console.log("\n=== Algolia health check ===");
   const health = await algoliaHealthCheck();
   if (!health.ok) {
     console.error(" FAIL:", health.details);
     process.exit(1);
   }
   console.log(" ", health.details);
-
-  console.log("\n=== Bootstrapping index settings ===");
-  await algoliaBootstrapIndex();
-  console.log("  searchable_attrs: citation_key, title, law_name, text");
-  console.log("  facets: law_id, jurisdiction, doc_type");
 
   const pool = new pg.Pool({
     host: process.env.PGHOST || "localhost",
