@@ -191,3 +191,18 @@ export {
   type AlgoliaSearchResult,
   type AlgoliaStats,
 } from "./search/index.js";
+
+
+// ============================================================
+//  Storyblok CMS (HackerNoon Proof of Usefulness sponsor)
+// ============================================================
+export {
+  isStoryblokConfigured,
+  getStoryblokClient,
+  listBlogPosts,
+  getBlogPost,
+  getStoryblokStats,
+  storyblokHealthCheck,
+  type BlogPost,
+  type StoryblokStats,
+} from "./cms/index.js";
