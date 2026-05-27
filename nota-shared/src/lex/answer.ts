@@ -19,6 +19,8 @@ import { chat } from "../llm.js";
 import { retrieve, type OpinionHit, type StatuteHit } from "./retrieve.js";
 import { liveSerpLegalSearch, type LiveLegalSource } from "../scrapers/justia-amlegal.js";
 import { isNeo4jConfigured } from "../graph/index.js";
+import { consensusDraft, isConsensusConfigured, type ConsensusResult } from "../llm-consensus.js";
+import { isCogneeConfigured, cogneeRecall, cogneeRemember, type CogneeRecallHit } from "../memory/index.js";
 import { expandViaGraph, type GraphExpansionResult } from "../graph/neo4j-client.js";
 import pg from "pg";
 
@@ -45,6 +47,19 @@ export interface LexAnswer {
     cited_opinions: number;
     related_statutes: number;
   };
+  consensus_provider?: string;                // 'aimlapi' if multi-model consensus was used
+  consensus?: {
+    models_used: string[];
+    consensus_markers: number[];           // markers ≥2 drafts agreed on (high confidence)
+    divergent_markers: number[];           // markers only 1 draft used (review candidates)
+    per_model_duration_ms: Record<string, number>;
+  };
+  memory_provider?: string;                   // 'cognee' if per-session memory was used
+  memory?: {
+    recalled_hits: number;                 // # of prior-session items pulled into context
+    remembered: boolean;                   // whether this Q&A was persisted post-answer
+    session_id?: string;
+  };
   disclaimer: string;
 }
 
@@ -52,7 +67,13 @@ export interface AnswerOpts {
   /** If true, augment with live BD SERP search for recent sources */
   useLiveSerp?: boolean;
   /** Override the LLM provider (defaults to whatever llm.ts uses) */
-  llmProvider?: "groq" | "ollama";
+  llmProvider?: "groq" | "ollama" | "aimlapi";
+  /** If true, fire 2-3 models in parallel via AI/ML API and vote on citation markers */
+  consensus?: boolean;
+  /** Override the model set for consensus mode (3 models recommended) */
+  consensus_models?: string[];
+  /** Session ID for Cognee per-session memory. When set + Cognee configured, prior session research is recalled and the current Q&A is remembered. */
+  session_id?: string;
 }
 
 const SYSTEM_PROMPT = `You are Lex.NY, a research assistant for New York law, supervised by a licensed NY attorney.
@@ -168,6 +189,22 @@ function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live:
 export async function answer(question: string, opts: AnswerOpts = {}): Promise<LexAnswer> {
   const start = Date.now();
 
+  // Step 0: optional Cognee recall — pull prior research from this session
+  // so the LLM has continuity across questions. No-op when not configured.
+  let memoryRecall: CogneeRecallHit[] = [];
+  let memory_provider: string | undefined;
+  if (opts.session_id && isCogneeConfigured()) {
+    try {
+      memoryRecall = await cogneeRecall(question, {
+        session_id: opts.session_id,
+        topK: 5,
+      });
+      if (memoryRecall.length > 0) memory_provider = "cognee";
+    } catch (e) {
+      console.warn(`Cognee recall failed (continuing): ${e instanceof Error ? e.message : e}`);
+    }
+  }
+
   // Step 1: retrieve from static corpus
   const retrieval = await retrieve(question, { limit: 10 });
 
@@ -276,9 +313,17 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
 
   // Step 4: ask the LLM to draft the answer
   const llmStart = Date.now();
+  const memoryBlock = memoryRecall.length > 0
+    ? [
+        "PRIOR RESEARCH FROM THIS SESSION (for context only — do not invent citations from this section):",
+        ...memoryRecall.map((h, i) => `  [recall ${i + 1}] ${(h.text || "").slice(0, 400)}`),
+        "",
+      ].join("\n")
+    : "";
   const userPrompt = [
     `QUESTION: ${question}`,
     "",
+    memoryBlock,
     "CONTEXT (numbered sources you may cite using [n] markers):",
     "",
     block,
@@ -286,13 +331,74 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
     "Draft your answer now. Every factual claim about NY law must end with a [n] marker referring to a source above.",
   ].join("\n");
 
-  const draftMsg = await chat({
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userPrompt }],
-    temperature: 0.1,
-  });
-  const draft = typeof draftMsg.content === "string" ? draftMsg.content : "";
+  // Step 4a: optional multi-model consensus via AI/ML API (hallucination detection).
+  // When opts.consensus is true and AIMLAPI_KEY is set, we fire 2-3 models in
+  // parallel and vote on citation markers. Markers that appear in >=2 drafts
+  // are high-confidence; markers that appear in only 1 are flagged for review.
+  let draft: string;
+  let consensus_provider: string | undefined;
+  let consensus_meta: NonNullable<LexAnswer["consensus"]> | undefined;
+  if (opts.consensus && isConsensusConfigured()) {
+    const models = opts.consensus_models && opts.consensus_models.length > 0
+      ? opts.consensus_models
+      : [
+          "openai/gpt-5-chat-latest",
+          "anthropic/claude-opus-4-5",
+          "meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo",
+        ];
+    try {
+      const result: ConsensusResult = await consensusDraft({
+        system: SYSTEM_PROMPT,
+        user: userPrompt,
+        models,
+        temperature: 0.1,
+        max_tokens: 2048,
+      });
+      draft = result.winner.text;
+      consensus_provider = "aimlapi";
+      consensus_meta = {
+        models_used: result.drafts.map((d) => d.model),
+        consensus_markers: result.consensus_markers,
+        divergent_markers: result.divergent_markers,
+        per_model_duration_ms: result.per_model_duration_ms,
+      };
+    } catch (e) {
+      // Fall back to single-model on consensus failure
+      console.warn(`Consensus failed, falling back to single model: ${e instanceof Error ? e.message : e}`);
+      const draftMsg = await chat({
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userPrompt }],
+        temperature: 0.1,
+      });
+      draft = typeof draftMsg.content === "string" ? draftMsg.content : "";
+    }
+  } else {
+    const draftMsg = await chat({
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userPrompt }],
+      temperature: 0.1,
+    });
+    draft = typeof draftMsg.content === "string" ? draftMsg.content : "";
+  }
   const llmDuration = Date.now() - llmStart;
+
+  // Step 5: optional Cognee remember — persist this Q&A for future questions
+  // in the same session. Fire-and-forget so we don't slow the response.
+  let remembered = false;
+  if (opts.session_id && isCogneeConfigured()) {
+    try {
+      const summary = `Question: ${question}\nKey citations: ${citations.slice(0, 8).map((c) => `[${c.marker}] ${c.display}`).join("; ")}\nAnswer summary: ${draft.slice(0, 500)}`;
+      const r = await cogneeRemember({
+        content: summary,
+        session_id: opts.session_id,
+        tags: ["lex_ny", "research_session"],
+      });
+      remembered = r.ok;
+      if (remembered) memory_provider = memory_provider || "cognee";
+    } catch (e) {
+      console.warn(`Cognee remember failed: ${e instanceof Error ? e.message : e}`);
+    }
+  }
 
   return {
     question,
@@ -304,6 +410,14 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
     web_data_provider,
     graph_provider,
     graph_expansion,
+    consensus_provider,
+    consensus: consensus_meta,
+    memory_provider,
+    memory: opts.session_id ? {
+      recalled_hits: memoryRecall.length,
+      remembered,
+      session_id: opts.session_id,
+    } : undefined,
     disclaimer: STANDARD_DISCLAIMER,
   };
 }

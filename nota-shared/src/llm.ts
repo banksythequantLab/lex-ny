@@ -6,6 +6,9 @@
  *
  *   LLM_PROVIDER=groq    → Groq cloud, Llama 3.3 70B Versatile (default, recommended for production)
  *   LLM_PROVIDER=ollama  → Local Ollama on Johnson, Qwen3 32B (free dev/test)
+ *   LLM_PROVIDER=aimlapi → AI/ML API ($5K hackathon prize partner). Unified gateway to 100+
+ *                          models incl. GPT-5/5.1, Claude Opus, Gemini, Mistral, Llama.
+ *                          OpenAI-compatible at https://api.aimlapi.com/v1.
  *
  * Both support tool-calling. We use OpenAI SDK as the client since it
  * works against any OpenAI-compatible endpoint.
@@ -13,7 +16,7 @@
 
 import OpenAI from "openai";
 
-export type LLMProvider = "groq" | "ollama";
+export type LLMProvider = "groq" | "ollama" | "aimlapi";
 
 interface LLMConfig {
   provider: LLMProvider;
@@ -42,6 +45,24 @@ export function getLLMConfig(): LLMConfig {
       baseURL: "https://api.groq.com/openai/v1",
       apiKey,
       model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+    };
+  }
+
+  if (provider === "aimlapi") {
+    const apiKey = process.env.AIMLAPI_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "AIMLAPI_KEY environment variable is required when LLM_PROVIDER=aimlapi. " +
+        "Sign up at https://aimlapi.com — $5K hackathon prize for best use."
+      );
+    }
+    return {
+      provider: "aimlapi",
+      baseURL: "https://api.aimlapi.com/v1",
+      apiKey,
+      // Default to a strong general-purpose model. Override with AIMLAPI_MODEL.
+      // Catalog: https://docs.aimlapi.com/api-references/service-endpoints/complete-model-list
+      model: process.env.AIMLAPI_MODEL || "openai/gpt-5-chat-latest",
     };
   }
 

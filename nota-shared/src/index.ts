@@ -206,3 +206,56 @@ export {
   type BlogPost,
   type StoryblokStats,
 } from "./cms/index.js";
+
+
+// ============================================================
+//  AI/ML API multi-model consensus (Bright Data UNLOCKED partner —  prize)
+// ============================================================
+export {
+  consensusDraft,
+  extractMarkers as extractCitationMarkers,
+  isConsensusConfigured,
+  aimlapiHealthCheck,
+  type ConsensusOpts,
+  type ConsensusDraft,
+  type ConsensusResult,
+} from "./llm-consensus.js";
+
+
+// ============================================================
+//  Cognee agent memory (Bright Data UNLOCKED partner — $2,400 + $500 prize)
+// ============================================================
+export {
+  isCogneeConfigured,
+  cogneeRemember,
+  cogneeRecall,
+  cogneeHealthCheck,
+  getCogneeStats,
+  type CogneeConfig,
+  type CogneeMemoryEntry,
+  type CogneeRecallHit,
+  type CogneeStats,
+} from "./memory/index.js";
+
+
+// ============================================================
+//  Speechmatics voice (STUB — Bright Data UNLOCKED partner, first 100 get $200 credits)
+// ============================================================
+export {
+  isSpeechmaticsConfigured,
+  getSpeechmaticsConfig,
+  issueTemporaryRTKey,
+  getSpeechmaticsStats,
+  type SpeechmaticsConfig,
+  type SpeechmaticsStats,
+} from "./voice/index.js";
+
+
+// ============================================================
+//  Triggerware workflow actions (STUB — Bright Data UNLOCKED partner)
+// ============================================================
+export {
+  isTriggerwareConfigured,
+  getTriggerwareStats,
+  type TriggerwareStats,
+} from "./actions/index.js";
