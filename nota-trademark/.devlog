@@ -1,0 +1,40 @@
+
+> nota-trademark@0.1.0 dev
+> next dev --turbo --port 3001
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.68.52:3001
+✓ Ready in 342ms
+- Experiments (use with caution):
+  · serverActions
+
+ GET / 200 in 1797ms (next.js: 1414ms, application-code: 383ms)
+Search failed: Error: NIMBLE_EMAIL and NIMBLE_PASSWORD environment variables are required when WEB_DATA_PROVIDER=nimble. Sign up at https://nimbleway.com — DWNY hackathon participants get credits.
+    at new NimbleClient (..\nota-shared\src\bright-data.ts:249:13)
+    at buildClient (..\nota-shared\src\bright-data.ts:88:14)
+    at getWebDataClient (..\nota-shared\src\bright-data.ts:74:12)
+    at runConflictSearch (..\nota-shared\src\conflict-agent.ts:264:34)
+    at POST (app\api\search\route.ts:43:43)
+  247 |     const password = process.env.NIMBLE_PASSWORD;
+  248 |     if (!email || !password) {
+> 249 |       throw new Error(
+      |             ^
+  250 |         "NIMBLE_EMAIL and NIMBLE_PASSWORD environment variables are required when WEB_DAT...
+  251 |         "Sign up at https://nimbleway.com — DWNY hackathon participants get credits."
+  252 |       );
+ POST /api/search 500 in 584ms (next.js: 482ms, application-code: 102ms)
+Search failed: Error: BRIGHT_DATA_API_TOKEN environment variable is required when WEB_DATA_PROVIDER=brightdata. Get one at https://brightdata.com/cp/setting/users
+    at new BrightDataClient (..\nota-shared\src\bright-data.ts:115:13)
+    at buildClient (..\nota-shared\src\bright-data.ts:86:14)
+    at getWebDataClient (..\nota-shared\src\bright-data.ts:74:12)
+    at runConflictSearch (..\nota-shared\src\conflict-agent.ts:264:34)
+    at POST (app\api\search\route.ts:43:43)
+  113 |     const apiToken = process.env.BRIGHT_DATA_API_TOKEN;
+  114 |     if (!apiToken) {
+> 115 |       throw new Error(
+      |             ^
+  116 |         "BRIGHT_DATA_API_TOKEN environment variable is required when WEB_DATA_PROVIDER=br...
+  117 |         "Get one at https://brightdata.com/cp/setting/users"
+  118 |       );
+ POST /api/search 500 in 83ms (next.js: 2ms, application-code: 80ms)

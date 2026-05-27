@@ -1,0 +1,17 @@
+{
+  "name": "nota-lawyer-platform",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "nota-shared",
+    "nota-trademark",
+    "nota-copyright",
+    "nota-lex"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace=@nota-lawyer/shared",
+    "dev:trademark": "npm run dev --workspace=nota-trademark",
+    "dev:copyright": "npm run dev --workspace=nota-copyright",
+    "dev:lex": "npm run dev --workspace=nota-lex"
+  }
+}

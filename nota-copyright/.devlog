@@ -1,0 +1,22 @@
+
+> nota-copyright@0.1.0 dev
+> next dev --turbo --port 3002
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://192.168.68.52:3002
+✓ Ready in 344ms
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next/dev/types/**/*.ts'
+
+  The following mandatory changes were made to your tsconfig.json:
+
+  	- jsx was set to react-jsx (next.js uses the React automatic runtime)
+
+- Experiments (use with caution):
+  · serverActions
+
+ GET / 200 in 1870ms (next.js: 1470ms, application-code: 400ms)

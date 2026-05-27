@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Nota.Lawyer — editorial design tokens
+   Same palette + typography as the static HTML landing pages.
+   Tailwind v4 lets us define tokens as CSS variables in @theme.
+   ============================================================ */
+
+@theme {
+  /* Palette */
+  --color-paper: #f3ece0;
+  --color-paper-2: #ebe2d1;
+  --color-paper-3: #e1d5be;
+  --color-ink: #0e0d0a;
+  --color-ink-2: #3c352b;
+  --color-rule: #1c1a16;
+  --color-seal: #a23a2c;
+  --color-seal-deep: #7d2a1f;
+  --color-gold: #b8923f;
+  --color-gold-deep: #8c6a26;
+  --color-green: #3d6041;
+
+  /* Typography */
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Risk level colors for ConflictReport */
+  --color-risk-clear: #3d6041;
+  --color-risk-low: #6a8c4a;
+  --color-risk-moderate: #b8923f;
+  --color-risk-high: #c75a3b;
+  --color-risk-blocking: #7d2a1f;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+html, body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(rgba(14, 13, 10, 0.045) 1px, transparent 1px),
+    radial-gradient(rgba(14, 13, 10, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1px 2px;
+}
+
+/* Display headings default to Fraunces */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   Component-level utility classes
+   Used across the wizard, dashboard, and landing pages.
+   ============================================================ */
+
+.editorial-caption {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.editorial-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-seal-deep);
+}
+
+.editorial-eyebrow::before {
+  content: "§";
+  color: var(--color-gold);
+  margin-right: 6px;
+}
+
+.seal-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-seal);
+  color: var(--color-paper);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 0 0 2px var(--color-paper), 0 0 0 1px var(--color-seal-deep);
+}
+
+/* Form inputs styled to match the editorial look */
+.editorial-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-rule);
+  background: var(--color-paper);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--color-ink);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.editorial-input:focus {
+  border-color: var(--color-seal);
+  box-shadow: 0 0 0 3px rgba(162, 58, 44, 0.12);
+}
+
+.editorial-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  margin-bottom: 6px;
+}
+
+.editorial-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 18px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--color-ink);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.editorial-button:hover {
+  background: var(--color-seal);
+  border-color: var(--color-seal);
+  transform: translateY(-1px);
+}
+
+.editorial-button.ghost {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.editorial-button.ghost:hover {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+/* Risk badges for ConflictReport */
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.risk-badge.clear { background: var(--color-risk-clear); color: white; }
+.risk-badge.low { background: var(--color-risk-low); color: white; }
+.risk-badge.moderate { background: var(--color-risk-moderate); color: white; }
+.risk-badge.high { background: var(--color-risk-high); color: white; }
+.risk-badge.blocking { background: var(--color-risk-blocking); color: white; }
