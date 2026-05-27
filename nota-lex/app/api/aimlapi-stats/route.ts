@@ -39,10 +39,10 @@ export async function GET() {
         "POST /api/ask?consensus=true with optional consensus_models in body",
       sample_models: [
         "openai/gpt-5-chat-latest",
-        "anthropic/claude-opus-4-5",
-        "meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo",
+        "claude-opus-4-7",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
         "google/gemini-2.5-pro",
-        "mistralai/mistral-large-2411",
+        "alibaba/qwen-max",
       ],
       catalog: "https://docs.aimlapi.com/api-references/service-endpoints/complete-model-list",
     });

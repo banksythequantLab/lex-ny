@@ -25,7 +25,7 @@
  *   await consensusDraft({
  *     system: SYSTEM_PROMPT,
  *     user: userPrompt,
- *     models: ["openai/gpt-5-chat-latest", "anthropic/claude-opus-4", "meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo"],
+ *     models: ["openai/gpt-5-chat-latest", "claude-opus-4-7", "meta-llama/Llama-3.3-70B-Instruct-Turbo"],
  *   });
  *
  * Returns the highest-confidence draft (passes citation-overlap test) plus

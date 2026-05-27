@@ -343,8 +343,8 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
       ? opts.consensus_models
       : [
           "openai/gpt-5-chat-latest",
-          "anthropic/claude-opus-4-5",
-          "meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo",
+          "claude-opus-4-7",
+          "meta-llama/Llama-3.3-70B-Instruct-Turbo",
         ];
     try {
       const result: ConsensusResult = await consensusDraft({
