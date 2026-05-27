@@ -399,53 +399,41 @@ export async function getGraphStats(): Promise<Neo4jStats> {
   }
 
   return withSession(async (s) => {
-    const [nodeCounts, relCounts, topCited, topApplied, totals] = await Promise.all([
-      s.run(`
-        CALL db.labels() YIELD label
-        CALL (label) {
-          MATCH (n)
-          WHERE label IN labels(n)
-          RETURN count(n) AS c
-        }
-        RETURN label, c
-      `).catch(() => ({ records: [] as Neo4jRecord[] })),
+    // Sessions in the Neo4j JS driver are not safe for concurrent queries.
+    // Running these in Promise.all on a single session caused silent drops:
+    // the rel-count query came back empty even though the data was there.
+    // Fix: serial awaits. Adds ~50ms vs parallel but is correct.
+    const nodeCounts = await s.run(`
+      MATCH (n)
+      WITH labels(n)[0] AS label, count(n) AS c
+      WHERE label IS NOT NULL
+      RETURN label, c
+    `).catch(() => ({ records: [] as Neo4jRecord[] }));
 
-      s.run(`
-        CALL db.relationshipTypes() YIELD relationshipType
-        CALL (relationshipType) {
-          MATCH ()-[r]->()
-          WHERE type(r) = relationshipType
-          RETURN count(r) AS c
-        }
-        RETURN relationshipType, c
-      `).catch(() => ({ records: [] as Neo4jRecord[] })),
+    const relCounts = await s.run(`
+      MATCH ()-[r]->()
+      RETURN type(r) AS relationshipType, count(r) AS c
+    `).catch(() => ({ records: [] as Neo4jRecord[] }));
 
-      s
-        .run(`
-          MATCH (citer:Opinion)-[:CITES]->(o:Opinion)
-          RETURN o.case_name AS case_name, count(citer) AS cited_by_count
-          ORDER BY cited_by_count DESC
-          LIMIT 5
-        `)
-        .catch(() => ({ records: [] as Neo4jRecord[] })),
+    const topCited = await s.run(`
+      MATCH (citer:Opinion)-[:CITES]->(o:Opinion)
+      RETURN o.case_name AS case_name, count(citer) AS cited_by_count
+      ORDER BY cited_by_count DESC
+      LIMIT 5
+    `).catch(() => ({ records: [] as Neo4jRecord[] }));
 
-      s
-        .run(`
-          MATCH (o:Opinion)-[:APPLIES]->(s:Statute)
-          RETURN s.citation_key AS citation_key, s.title AS title, count(o) AS applied_by_count
-          ORDER BY applied_by_count DESC
-          LIMIT 5
-        `)
-        .catch(() => ({ records: [] as Neo4jRecord[] })),
+    const topApplied = await s.run(`
+      MATCH (o:Opinion)-[:APPLIES]->(s:Statute)
+      RETURN s.citation_key AS citation_key, s.title AS title, count(o) AS applied_by_count
+      ORDER BY applied_by_count DESC
+      LIMIT 5
+    `).catch(() => ({ records: [] as Neo4jRecord[] }));
 
-      s
-        .run(`
-          MATCH (n) WITH count(n) AS nodes
-          MATCH ()-[r]->() WITH nodes, count(r) AS rels
-          RETURN nodes, rels
-        `)
-        .catch(() => ({ records: [] as Neo4jRecord[] })),
-    ]);
+    const totals = await s.run(`
+      MATCH (n) WITH count(n) AS nodes
+      MATCH ()-[r]->() WITH nodes, count(r) AS rels
+      RETURN nodes, rels
+    `).catch(() => ({ records: [] as Neo4jRecord[] }));
 
     const node_counts: Record<string, number> = {};
     for (const r of nodeCounts.records) {

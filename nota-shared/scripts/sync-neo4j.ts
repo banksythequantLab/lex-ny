@@ -22,7 +22,7 @@
 
 import pg from "pg";
 import {
-  bootstrapSchema,
+  bootstrapNeo4jSchema,
   closeNeo4jDriver,
   neo4jSyncOpinions,
   neo4jSyncStatutes,
@@ -111,7 +111,7 @@ async function main() {
 
   // Bootstrap schema
   console.log("\n=== Bootstrapping schema ===");
-  const bs = await bootstrapSchema();
+  const bs = await bootstrapNeo4jSchema();
   console.log(`  ${bs.constraints_created.length} constraints, ${bs.indexes_created.length} indexes`);
 
   const pool = new pg.Pool({

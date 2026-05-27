@@ -9,7 +9,7 @@ $root = 'E:\nota_lawyer_hackathon\nota-build'
 
 # Parse .env.local into process env
 Get-Content "$root\nota-lex\.env.local" | ForEach-Object {
-    if ($_ -match '^([A-Z][A-Z_]+)=(.*)$') {
+    if ($_ -match '^([A-Z][A-Z_0-9]+)=(.*)$') {
         [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
     }
 }
