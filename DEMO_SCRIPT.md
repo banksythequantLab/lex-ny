@@ -1,257 +1,136 @@
-# Lex.NY Demo Video — Submission Scripts
+# Lex.NY — Demo Video Script
 
-Three cuts of the same demo, tuned to the audience of each submission.
-
-- **Cut A (90 sec)** → Bright Data UNLOCKED — judging weighs *novel use of BD products*
-- **Cut B (3 min)** → HackerNoon Proof of Usefulness — judging weighs *real-world utility*
-- **Cut C (30 sec)** → Social / trailer for cross-posting
-
-All cuts share the same recording session. Shoot the long version once with B-roll on the corpus + ask flow, then edit down into A and C from the same footage.
+Three cuts for three audiences. **Record them once, edit down to the right length.**
 
 ---
 
-## SHARED B-ROLL / SCREEN RECORDING SHOT LIST
+## CUT 1 — 90 seconds — Bright Data UNLOCKED submission (lablab.ai)
 
-Capture these once. Each cut pulls from this pool.
+**Tone:** Technical depth, attorney credibility, "shows the BD stack working in real time."
 
-1. **Hero shot**: `lex.nota.lawyer` landing page, slow scroll from hero through the three "how it works" columns. (~10 sec)
-2. **Sample question click**: Click "What are the elements of fraud under NY law?" from the landing sidebar. Cuts to the ask page with the question already filled in. (~3 sec)
-3. **Live ask, no live SERP**: Watch the progress messages cycle — *embedding → searching corpus → searching statutes → ranking → asking Llama 3.3 70B*. End on the answer rendering with citation markers and source cards. (~12 sec)
-4. **Citation click**: Click a `[3]` marker in the answer body, screen scrolls to the matching source card, click through to the underlying CourtListener / NY Senate URL — opens in a new tab showing the real source. (~6 sec)
-5. **Live SERP toggle**: Same question, this time with "Augment with live web sources (Bright Data SERP)" checked. Show the same answer plus a new `LIVE WEB` source card with a current article. (~10 sec)
-6. **Corpus index**: Scroll the `/corpus` page, switch from Cases tab to Statutes tab, filter by court = `nyappdiv1`, then by law = `EDN`. (~15 sec)
-7. **Terminal: scraper running**: A clean terminal showing `npx tsx scripts/seed-cases.ts --years=3` streaming output: `page 1: 100 clusters`, `page 2: 100 clusters`... (~8 sec)
-8. **Terminal: BD scraper running**: Terminal showing the NYC Admin Code scraper hitting Bright Data Web Unlocker — log lines with `scraper_provider: brightdata`. (~5 sec)
-9. **Closing card**: Logo + "lex.nota.lawyer" + "Built with Bright Data" + Derek's bar admission line. (~3 sec)
+### Setup
+- Screen: split — left half is the Lex.NY app (`http://localhost:3000` or live tunnel URL), right half is `/api/bright-data-stats` in a terminal or browser tab.
+- Have **Penal §400.00 firearms** question pre-typed in the textarea (don't waste seconds typing on camera).
+- Have a second window with the GitHub repo open in case the demo cuts to it.
 
----
+### Script
 
-# CUT A — 90 seconds — BRIGHT DATA UNLOCKED
+> **(0:00)** "I'm Derek Soltis, a New York attorney. This is Lex.NY — a research engine where every answer is anchored to real sources, with Bright Data Web Unlocker and SERP pulling the receipts in real time."
 
-**Audience**: BD product judges. They care about novel BD usage, not lawyer marketing.
-**Hook**: Bright Data is the unlock for a problem free APIs can't solve alone.
+> **(0:08)** "Here's the killer problem with most legal AI: it makes things up. Invented case names, invented section numbers. As an attorney supervising a tool like this, that's a non-starter under New York Rule of Professional Conduct 7.1."
 
----
+> **(0:20)** "So we built Lex.NY to make hallucination physically impossible. Watch."
 
-**[0:00 – 0:08] OPENING — the problem statement**
+> **(0:24)** *Click "Ask Lex.NY". The Penal §400.00 question fires.*
 
-*[Voice over hero shot]*
+> **(0:28)** *Point at the right pane where `/api/bright-data-stats` shows the counter incrementing.* "Right now, Bright Data is firing three calls. One SERP query to Google constrained to NY legal sources. Two Web Unlocker calls to pull full statute text from nysenate.gov in parallel."
 
-> New York has 134 Consolidated Laws, four Appellate Divisions, the Court of Appeals, and the NYC Administrative Code. No single API gives you all of it. Most of it lives behind anti-bot pages, JS-rendered tables, and aggressive rate limits.
+> **(0:42)** *The answer renders.* "Notice every claim has a citation marker. The model is required to anchor every sentence to either an indexed statute or a Bright Data-sourced URL — or admit it can't answer. No middle ground."
 
----
+> **(0:55)** *Refresh `/api/bright-data-stats`.* "Three requests, 400 kilobytes of fresh legal text fetched through Bright Data, in five seconds total. The Web Unlocker zone handles bot detection, CAPTCHAs, JavaScript-rendered pages — nysenate.gov, Justia, AmLegal all served reliably."
 
-**[0:08 – 0:20] THE BUILD — what we made**
+> **(1:10)** "The corpus is forty thousand NY statute sections in local Postgres with pgvector. Bright Data is what makes it more than a snapshot — it's the layer that gives Lex.NY the present-day web."
 
-*[Cut to landing page hero, "Every case. Every statute. Every cite verifiable."]*
+> **(1:22)** "Built by a NY-licensed attorney, supervised by a NY-licensed attorney, and grounded in Bright Data on every single request. Lex.NY — every cite verifiable."
 
-> Lex.NY is a New York law research engine. Ask a question in plain English. Get an answer grounded in real cases and real statutes, with every claim anchored to a source you can verify.
+> **(1:30)** *End card with GitHub URL and lablab.ai team page link.*
+
+### B-roll if needed
+- Scroll through `/api/bright-data-stats` showing the recent_requests log
+- Zoom in on a citation card showing the source URL → click it → it goes to nysenate.gov
 
 ---
 
-**[0:20 – 0:50] THE BRIGHT DATA PART — the actual demo**
+## CUT 2 — 3 minutes — HackerNoon Proof of Usefulness (proofofusefulness.com + HackerNoon article hero clip)
 
-*[Cut to ask page, click "What are the elements of fraud under NY law?"]*
+**Tone:** Real product, real use case, real users (paralegals, small-firm attorneys). Lean on traction story.
 
-> The corpus is built by a multi-source scraper. Free APIs do what free APIs are good at — CourtListener for case law, NY Senate OpenLeg for statutes.
+### Setup
+- Same split screen plus a third pane: `/api/graph-stats` and `/api/algolia-stats` for the second-half sponsor showcase.
 
-*[Cut to terminal showing seed-cases.ts running]*
+### Script
 
-> But the parts that matter most aren't behind APIs.
+> **(0:00) — Hook**  
+> "I get the same question from clients every week. 'Hey Derek, what does New York law actually say about X?' And every time I have to bill them three hundred dollars to look it up. So I built the tool I wished existed."
 
-*[Cut to a browser tab showing codelibrary.amlegal.com loading slowly with a CAPTCHA]*
+> **(0:20) — The Problem**  
+> "Legal AI tools either invent law — which gets you disciplined — or they're so limited they only answer trivia. There's no production-grade middle ground for jurisdiction-specific research."
 
-> The NYC Administrative Code lives at American Legal Publishing. JS-rendered, anti-bot, no API. Without Bright Data Web Unlocker, you scrape it once and get blocked.
+> **(0:40) — Demo: question 1**  
+> *Type: "What does General Business Law 349 prohibit?"*  
+> "I just asked Lex.NY about consumer protection law. Watch the citation count climb…"  
+> *Point at the BD stats counter ticking.*
 
-*[Cut to terminal showing the BD-powered AmLegal scraper running, with "scraper_provider: brightdata" log line highlighted]*
+> **(1:00)** *Answer renders.* "Every claim has a [number] citation. Fifteen total — ten from the indexed statute corpus, five fetched live through Bright Data Web Unlocker pointing to nysenate.gov and law.justia.com."
 
-> With Web Unlocker, it just works. Same code, same fetch, no CAPTCHA dance.
+> **(1:15) — Demo: question 2 (graph augmentation)**  
+> *Type: "What statutes does Penal Law 400.00 cite or interact with?"*  
+> "Now I'm asking a relational question. Pure vector search would miss this. Neo4j AuraDB is what makes it work — every NY opinion-statute citation is in a graph database, so the model can traverse outward from a seed statute and find what else applies."
 
----
+> **(1:40)** *Show /api/graph-stats with node and relationship counts.*  
+> "Right now my graph has thousands of nodes and tens of thousands of relationships between statutes and the opinions that apply them."
 
-**[0:50 – 1:15] THE LIVE-SERP PART — augment-at-query-time**
+> **(2:00) — Demo: question 3 (Algolia lexical)**  
+> "And when someone already knows the cite they want — like 'GBS 349-A' — they don't need semantic search. They need a fast lookup. That's Algolia."  
+> *Type "GBS 349" into the corpus search box.*  
+> *Results appear in milliseconds.*  
+> "Forty thousand records indexed, ten thousand free searches per month on the Build tier."
 
-*[Cut to ask page with "Augment with live web sources (Bright Data SERP)" checkbox highlighted, then checked]*
+> **(2:25) — Storyblok closing beat**  
+> "Every product launch needs a blog. Lex.NY's release notes and how-tos live in Storyblok — content team writes in the visual editor, the Next.js front-end pulls it via API."  
+> *Cut to a /blog page rendering Storyblok content.*
 
-> Lex.NY also uses Bright Data SERP at query time. If you ask a question about a case decided last week — too fresh to be in our static index — SERP fills the gap.
+> **(2:40) — Closing**  
+> "Lex.NY uses Bright Data for live web data, Neo4j for the citation graph, Algolia for federated search, and Storyblok for the public site. Four sponsor tools doing exactly what they're best at, behind one product that solves a real problem."
 
-*[Cut to running the same fraud query with live SERP on, showing the new LIVE WEB source card appearing alongside the corpus sources]*
+> **(2:55)** "I'm a NY-licensed attorney. I'll be the supervising attorney for the production version. Find us at lex.nota.lawyer."
 
-> The system constrains the search to legal sources only: nycourts.gov, justia, nysenate, cornell. No SEO spam ever reaches the answer.
-
----
-
-**[1:15 – 1:30] CLOSING**
-
-*[Cut to the answer page showing citations 1–7, then click marker [4] to scroll to source card]*
-
-> Every claim is cited. Click any marker. Verify the source. The system prompt forbids invented law — if the corpus doesn't cover something, Lex.NY says so instead of guessing.
-
-*[Cut to closing card]*
-
-> Lex.NY. Built with Bright Data. Supervised by a New York attorney. Try it at lex.nota.lawyer.
-
----
-
-# CUT B — 3 minutes — HACKERNOON PROOF OF USEFULNESS
-
-**Audience**: HackerNoon community + judges. They care about real utility, not feature lists.
-**Hook**: AI legal tools hallucinate. This one can't, because the architecture won't let it.
+> **(3:00)** *End card with repo URL, proofofusefulness.com submission URL, and HackerNoon article tag.*
 
 ---
 
-**[0:00 – 0:25] OPENING — the credibility problem**
+## CUT 3 — 30 seconds — Social hook for Twitter/LinkedIn
 
-*[Talking head, Derek to camera, office setting]*
+**Tone:** Punchy. Designed to drive clicks to the long video.
 
-> I'm Derek Soltis. I'm a New York attorney, admitted to practice in the Southern and Eastern Districts. I've watched the legal-AI space for two years now, and the same problem keeps appearing.
+### Script
 
-*[B-roll: news headlines about lawyers sanctioned for filing briefs with hallucinated case citations from ChatGPT]*
+> "I'm a New York attorney. Every legal AI hallucinates. So I built one that *physically can't*. Watch."  
+> *5-second clip of the Penal §400.00 demo answer rendering with citations highlighted.*  
+> "Forty thousand NY statutes indexed. Bright Data fetches the receipts. Neo4j maps the citation graph. Every answer has the source. Lex.NY — lex.nota.lawyer."
 
-> Lawyers have been sanctioned, fined, and disbarred for filing briefs full of cases that don't exist. The AI made them up. The lawyer didn't check. The court noticed.
-
-> The problem isn't that AI is bad at law. The problem is that most legal AI tools answer first and cite later — if at all. Lex.NY does the opposite.
-
----
-
-**[0:25 – 0:55] THE THESIS — architecture, not promises**
-
-*[Whiteboard or simple animated diagram]*
-
-> Lex.NY can't hallucinate citations. Not because the model is smarter. Because the architecture won't let it.
-
-*[Diagram: question → embed → retrieve from corpus → context block → LLM → answer with [n] markers]*
-
-> Every question goes through three steps. First, retrieve real sources from the corpus — opinions and statutes that actually exist, because we scraped them from CourtListener, the NY Senate, and the NYC Administrative Code. Second, build a context block with numbered markers. Third, ask Llama 3.3 70B to draft an answer where every factual claim ends with a marker pointing to a real source.
-
-> If the corpus doesn't have the answer, the model is instructed to say so. No filler. No guessing.
+### Visuals
+- Bold text overlay: "Every cite verifiable."
+- End card with Bright Data + HackerNoon + Neo4j + Algolia logos
 
 ---
 
-**[0:55 – 1:30] THE DEMO — actually use it**
+## Recording checklist
 
-*[Switch to screen recording: landing page, click sample question]*
+- [ ] **Clean desktop background** — dark, no clutter
+- [ ] **Browser zoom 110-125%** so the text is readable on mobile
+- [ ] **Hide bookmarks bar** during the recording
+- [ ] **Mic test** — record 10 sec, listen back, fix levels
+- [ ] **Lighting** — face the window, soft front light
+- [ ] **OBS scenes pre-built:**
+  - Scene 1: Full-screen Lex.NY at /ask
+  - Scene 2: Split (Lex.NY + BD stats terminal)
+  - Scene 3: Three-pane (Lex.NY + BD stats + graph-stats)
+  - Scene 4: End card
+- [ ] **Demo questions queued** — paste each from a text file, don't type live
+- [ ] **Empty BD stats counter** before each take — POST /api/bright-data-stats?reset isn't a thing yet, but a server restart clears it
+- [ ] **Take 3 attempts** per cut, pick the best, edit in DaVinci Resolve or CapCut
 
-> Let me show you. "What is the standard for piercing the corporate veil in New York?" Real research question, the kind I answer for clients regularly.
+## Length targets
 
-*[Watch the answer render — show the progress messages, then the final answer with multiple [n] citations]*
-
-> Five seconds. Answer cites three Court of Appeals decisions and one statute. Let me click on the first citation.
-
-*[Click marker [1], page scrolls to source card, click the source URL]*
-
-> That's a real case. Real citation. Real holding. I just opened it on CourtListener. The card on Lex.NY accurately quotes the holding because the AI worked from the actual opinion text, not from training data that might be three years old.
-
----
-
-**[1:30 – 2:00] THE CORPUS — what's actually in there**
-
-*[Cut to /corpus page, scroll through cases tab]*
-
-> The corpus is real, and it's growing. Five thousand-plus appellate opinions from the Court of Appeals and all four Appellate Divisions, going back three years. All 134 NY Consolidated Laws — every section, every chapter, with the full text. The NYC Administrative Code, every title.
-
-*[Switch to Statutes tab, filter to EDN]*
-
-> Filter by law, by court, by date. Click any row, go straight to the original source. This is the same data the AI sees. There's no proprietary index we're hiding.
-
----
-
-**[2:00 – 2:30] THE BRIGHT DATA STORY — why this works**
-
-*[Cut to terminal running BD-powered AmLegal scraper]*
-
-> The corpus is built by a hybrid scraper. Free APIs where they exist — CourtListener for cases, NY Senate OpenLegislation for statutes. Bright Data Web Unlocker for everything else: the NYC Admin Code, the freshest decisions Justia indexes before CourtListener does, and live SERP queries at answer time so we can pull in articles published yesterday.
-
-> Without Bright Data, the corpus has gaps. With it, the corpus is complete, and the cost stays under a few cents per question.
-
----
-
-**[2:30 – 3:00] CLOSING — who this is for**
-
-*[Talking head, Derek to camera]*
-
-> Lex.NY is for the next pro se litigant who can't afford Westlaw, the next paralegal who needs to verify a citation in twenty seconds instead of twenty minutes, the next lawyer who wants a draft answer with real sources before they spend an hour writing the brief themselves.
-
-> It's not a replacement for a lawyer. It's a research assistant a lawyer can supervise. I supervise this one personally — I'm responsible for what it says.
-
-> Try it at lex.nota.lawyer. The corpus, the scrapers, the system prompts — all open and inspectable. That's the only kind of legal AI I'd put my bar number behind.
-
-*[Closing card]*
-
----
-
-# CUT C — 30 seconds — TRAILER
-
-**Audience**: Twitter / LinkedIn / Bluesky / Threads
-**Hook**: Strong claim, strong proof.
-
----
-
-**[0:00 – 0:05]**
-
-*[Hero shot, voice over]*
-
-> Most legal AI hallucinates cases. This one can't.
-
----
-
-**[0:05 – 0:15]**
-
-*[Quick cuts: ask page → answer rendering → citation markers → click marker → source card → click out to real CourtListener URL]*
-
-> Every claim cites a real case. Click it. Open the source. Verify it yourself.
-
----
-
-**[0:15 – 0:25]**
-
-*[Cut to corpus page, fast scroll through cases and statutes]*
-
-> 5,000 NY appellate opinions. 134 Consolidated Laws. The NYC Admin Code. All indexed. All searchable.
-
----
-
-**[0:25 – 0:30]**
-
-*[Logo card]*
-
-> Lex.NY. Built with Bright Data. Supervised by a NY attorney.
-> lex.nota.lawyer
-
----
-
-# PRODUCTION CHECKLIST
-
-Before recording:
-
-- [ ] Seed corpus is populated (so `/ask` returns real answers, `/corpus` is not empty)
-- [ ] At least one good test question that returns a strong answer with 4+ citations
-- [ ] Browser zoom set to 110% so text is readable on YouTube/Devpost players
-- [ ] OBS recording at 1920×1080, 30fps
-- [ ] Mic check — Derek's voice is the talking-head audio for Cut B
-- [ ] Closing card PNG ready at /mnt/user-data/outputs/lex_closing_card.png
-
-Recording sequence (one continuous session):
-
-1. Talking head segments for Cut B opening + closing (1 min total)
-2. Full screen-recording of landing → ask flow → corpus browse, **without live SERP**, narrating naturally
-3. Same flow **with live SERP**, narrating the difference
-4. Terminal segments — scraper output, BD logs
-5. Citation-click sequences
-
-Editing:
-
-- Cut B = the master edit, full 3 min
-- Cut A = lift 0:00–1:30 of Cut B minus the talking head sections
-- Cut C = 6 fast scenes from B's b-roll, no voiceover except opening/closing
-- Captions burned in for all three (most social viewers watch muted)
-
-Submission destinations:
-
-| Cut | Where | Format |
+| Cut | Target | Use |
 |---|---|---|
-| A | Bright Data UNLOCKED Devpost submission | YouTube unlisted, link in submission |
-| B | HackerNoon writeup | YouTube unlisted, embedded in article |
-| C | X, LinkedIn, Bluesky | MP4 direct upload, 30 sec native video |
+| 1 | 90 sec | lablab.ai submission upload |
+| 2 | 3 min | HackerNoon article embed + proofofusefulness.com |
+| 3 | 30 sec | Twitter/LinkedIn launch post |
 
-Both A and B get a written README/post that the video supports. The video alone is not the submission — the writeup is, with the video as proof.
+## Upload destinations
+
+- **YouTube unlisted** for the 90 sec and 3 min versions
+- **Twitter native** for the 30 sec (better algo treatment than YouTube embed)
+- **HackerNoon article** embeds the 3 min via the YouTube URL

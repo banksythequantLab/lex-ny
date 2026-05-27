@@ -170,3 +170,24 @@ export {
   type GraphExpansionResult,
   type Neo4jStats,
 } from "./graph/index.js";
+
+
+// ============================================================
+//  Algolia federated search (HackerNoon Proof of Usefulness sponsor)
+// ============================================================
+export {
+  isAlgoliaConfigured,
+  getAlgoliaAdminClient,
+  getAlgoliaSearchClient,
+  bootstrapIndex as algoliaBootstrapIndex,
+  indexStatutes as algoliaIndexStatutes,
+  clearIndex as algoliaClearIndex,
+  searchStatutes as algoliaSearchStatutes,
+  getAlgoliaStats,
+  algoliaHealthCheck,
+  type AlgoliaConfig,
+  type AlgoliaStatuteRecord,
+  type AlgoliaSearchHit,
+  type AlgoliaSearchResult,
+  type AlgoliaStats,
+} from "./search/index.js";
