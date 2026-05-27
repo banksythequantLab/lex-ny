@@ -42,10 +42,19 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ provider: "triggerware", trigger });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : String(e) },
-      { status: 500 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    // No-connectors is a 400 (user action required), not a 500 (server bug)
+    if (msg.includes("0 connectors installed")) {
+      return NextResponse.json(
+        {
+          error: msg,
+          action_required: "install_connector",
+          console_url: "https://console.triggerware.ai/connector-catalog",
+        },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 

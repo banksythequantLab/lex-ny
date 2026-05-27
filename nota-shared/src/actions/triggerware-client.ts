@@ -123,21 +123,43 @@ export interface TWPollResult {
 /**
  * Create a watch. The English description is converted to SQL by Triggerware
  * and the schedule is suggested if you don't provide one (otherwise pass
- * seconds — 300 = poll every 5 min, 86400 = daily).
+ * seconds - 300 = poll every 5 min, 86400 = daily).
+ *
+ * Payload notes (discovered by live testing against api.triggerware.com):
+ *   - For natural-language form, the API expects `prompt`, not `query`.
+ *     The docs example hid the body shape behind `{...}`.
+ *   - For raw SQL, pass `query` + `schedule` together with language: sql.
+ *   - If no connectors are installed on the account, Triggerware returns
+ *     500 "Model did not produce a trigger" - the LLM has no virtual
+ *     tables to plan against. We pre-flight and surface a clearer error.
  */
 export async function createTrigger(
   name: string,
   description: string,
-  opts: { scheduleSeconds?: number } = {}
+  opts: { scheduleSeconds?: number; sql?: string } = {}
 ): Promise<TWTrigger> {
+  // Pre-flight: 0 connectors -> trigger planning will fail confusingly
+  try {
+    const installed = await listInstalled();
+    if (installed.length === 0) {
+      throw new Error(
+        "Triggerware account has 0 connectors installed. The trigger-planning " +
+        "LLM has no virtual tables to query. Install at least one connector at " +
+        "https://console.triggerware.ai/connector-catalog before creating a watch."
+      );
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("0 connectors installed")) throw e;
+    // Otherwise fall through and let the create attempt surface the real error
+  }
+
+  const body = opts.sql
+    ? { name, query: opts.sql, language: "sql" as const, ...(opts.scheduleSeconds && { schedule: opts.scheduleSeconds }) }
+    : { name, prompt: description, ...(opts.scheduleSeconds && { schedule: opts.scheduleSeconds }) };
+
   return tw<TWTrigger>("/triggers", {
     method: "POST",
-    body: JSON.stringify({
-      name,
-      query: description,
-      language: "english",
-      ...(opts.scheduleSeconds && { schedule: opts.scheduleSeconds }),
-    }),
+    body: JSON.stringify(body),
   });
 }
 
