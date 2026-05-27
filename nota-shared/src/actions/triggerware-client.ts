@@ -65,9 +65,21 @@ async function tw<T = unknown>(path: string, init: RequestInit = {}): Promise<T>
   });
   if (!r.ok) {
     const body = await r.text().catch(() => "");
-    throw new Error(`Triggerware ${path} → ${r.status}: ${body.slice(0, 300)}`);
+    throw new Error(`Triggerware ${path} -> ${r.status}: ${body.slice(0, 300)}`);
   }
-  return r.json() as Promise<T>;
+  // Triggerware returns an empty body (no JSON) when there are no deltas
+  // or when an operation has no useful output (e.g. trigger poll on a
+  // fresh trigger). Treat empty as a default-shaped value rather than
+  // crashing in r.json().
+  const text = await r.text();
+  if (!text.trim()) {
+    return {} as T;
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return {} as T;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -175,7 +187,16 @@ export async function listTriggers(): Promise<TWTrigger[]> {
  * the second time unless new data has arrived.
  */
 export async function pollTrigger(name: string): Promise<TWPollResult> {
-  return tw<TWPollResult>(`/triggers/${encodeURIComponent(name)}/poll`, { method: "POST" });
+  const r = await tw<Partial<TWPollResult>>(
+    `/triggers/${encodeURIComponent(name)}/poll`,
+    { method: "POST" }
+  );
+  // Triggerware returns an empty body when no deltas have accumulated.
+  // tw() normalizes that to {} - normalize here to the documented shape.
+  return {
+    added: r.added ?? [],
+    deleted: r.deleted ?? [],
+  };
 }
 
 export async function deleteTrigger(name: string): Promise<{ ok: true }> {
