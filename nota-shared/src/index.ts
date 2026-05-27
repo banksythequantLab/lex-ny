@@ -246,6 +246,7 @@ export {
   getSpeechmaticsConfig,
   issueTemporaryRTKey,
   getSpeechmaticsStats,
+  speechmaticsHealthCheck,
   type SpeechmaticsConfig,
   type SpeechmaticsStats,
 } from "./voice/index.js";
@@ -256,6 +257,20 @@ export {
 // ============================================================
 export {
   isTriggerwareConfigured,
+  triggerwareQuery,
+  triggerwareCreate,
+  triggerwareListTriggers,
+  triggerwarePoll,
+  triggerwareDelete,
+  triggerwareCatalog,
+  triggerwareInstalled,
+  triggerwareInstallConnector,
   getTriggerwareStats,
+  triggerwareHealthCheck,
+  type TWQueryResult,
+  type TWTrigger,
+  type TWPollResult,
+  type TWConnector,
   type TriggerwareStats,
+  type TriggerwareConfig,
 } from "./actions/index.js";

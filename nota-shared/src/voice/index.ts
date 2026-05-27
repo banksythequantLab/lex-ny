@@ -1,11 +1,12 @@
 /**
- * Speechmatics voice integration (STUB). See speechmatics-client.ts.
+ * Speechmatics voice integration. See speechmatics-client.ts.
  */
 export {
   isSpeechmaticsConfigured,
   getSpeechmaticsConfig,
   issueTemporaryRTKey,
   getSpeechmaticsStats,
+  speechmaticsHealthCheck,
   type SpeechmaticsConfig,
   type SpeechmaticsStats,
 } from "./speechmatics-client.js";

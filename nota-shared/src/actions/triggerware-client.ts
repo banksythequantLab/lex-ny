@@ -1,76 +1,242 @@
 /**
- * Triggerware integration for Lex.NY — workflow automation.
+ * Triggerware integration for Lex.NY — live data queries + change-detection triggers.
  *
- * STATUS: STUB — NOT YET IMPLEMENTED.
+ * Why this sponsor fits a legal-research engine:
  *
- * Why this sponsor matters:
- *   Triggerware connects AI agents with workflows, automation, tools, and
- *   real-world actions. For Lex.NY this would mean:
- *     - "Save this research to Google Drive" / "Email this to opposing counsel"
- *     - "Add a calendar reminder to follow up on this statute next session"
- *     - "Push this answer to a paralegal's queue for verification"
+ *   1. **Live data queries** — Triggerware lets us hit external data sources
+ *      ("SQL Over Everything") with natural-language queries the LLM
+ *      constructs. For Lex.NY: "find news articles about NY consumer-protection
+ *      enforcement in the last 30 days" → executable SQL across whatever
+ *      connectors are installed (PubMed, web data, custom).
  *
- *   These are real attorney-supervised workflows that turn one-shot
- *   research into actual case prep.
+ *   2. **Watch-for-change triggers** — far more valuable for attorneys.
+ *      A trigger is a named, scheduled query that tracks deltas: rows
+ *      added or removed since the last poll. For Lex.NY:
+ *        - "new NY appellate decisions about consumer protection"
+ *        - "amendments to General Business Law Article 22-A"
+ *        - "newly-filed federal class actions under GBS 349"
+ *      The attorney creates a watch, polls it on their schedule, and
+ *      gets back only the *deltas* — the new opinions or amendments
+ *      they haven't seen yet. This is real research-workflow value.
  *
- * Why this is a stub:
- *   Workflow automation is lower fit for a research engine than for an
- *   agent-platform product, and the prize tier is "Partner challenge
- *   rewards available" rather than a $-amount. Given the May 31 deadline
- *   and the need to ship AI/ML API + Cognee end-to-end, Triggerware is
- *   deferred to next session. Skeleton below honestly returns "stub" so
- *   the judges see what's planned without a faked demo.
+ * API surface (per https://docs.triggerware.com):
+ *   POST /query                       — natural-language → SQL → rows
+ *   POST /triggers                    — create a watch
+ *   GET  /triggers                    — list watches
+ *   POST /triggers/{name}/poll        — pull deltas (clears the queue)
+ *   DELETE /triggers/{name}           — delete a watch
+ *   GET  /connectors/catalog          — list available connectors
+ *   PUT  /connectors/installed/{name} — install one
  *
- * What's needed to ship:
- *   1. Sign up at Triggerware (URL TBD — partner page expected on lablab.ai)
- *   2. Identify which workflow triggers are useful for legal research
- *      (likely: "save research to Drive", "email memo", "calendar reminder")
- *   3. Wire a /api/actions/{action_name} endpoint per workflow
- *   4. Add a "Take action" dropdown on the answer card in the UI
+ * Auth: `Api-Key: <key>` header on every request.
+ *
+ * Hackathon: Partner-tier challenge rewards. Best Use TBD.
+ *            Set TRIGGERWARE_API_KEY in .env.local.
  */
 
-export function isTriggerwareConfigured(): boolean {
-  return Boolean(process.env.TRIGGERWARE_API_KEY);
+export interface TriggerwareConfig {
+  apiKey: string;
+  baseUrl: string;
 }
+
+function getConfig(): TriggerwareConfig | null {
+  const apiKey = process.env.TRIGGERWARE_API_KEY;
+  if (!apiKey) return null;
+  return {
+    apiKey,
+    baseUrl: (process.env.TRIGGERWARE_BASE_URL || "https://api.triggerware.com").replace(/\/$/, ""),
+  };
+}
+
+export function isTriggerwareConfigured(): boolean {
+  return getConfig() !== null;
+}
+
+async function tw<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+  const cfg = getConfig();
+  if (!cfg) throw new Error("Triggerware not configured");
+  const r = await fetch(`${cfg.baseUrl}${path}`, {
+    ...init,
+    headers: {
+      "Api-Key": cfg.apiKey,
+      "Content-Type": "application/json",
+      ...(init.headers as Record<string, string> | undefined),
+    },
+  });
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    throw new Error(`Triggerware ${path} → ${r.status}: ${body.slice(0, 300)}`);
+  }
+  return r.json() as Promise<T>;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Queries — natural language → SQL → rows                            */
+/* ------------------------------------------------------------------ */
+
+export interface TWQueryResult {
+  sql: string;
+  signature: string[];
+  rows: unknown[][];
+}
+
+/**
+ * Execute a natural-language query. Triggerware translates it to SQL
+ * against the installed connectors and returns rows.
+ *
+ * Example:
+ *   await query("recent PubMed articles about CRISPR base editing")
+ *   → { sql: "select title, year from pubmed where query='CRISPR base editing' limit 25",
+ *       signature: ["title", "year"],
+ *       rows: [["..."], ...] }
+ */
+export async function query(
+  englishOrSql: string,
+  opts: { language?: "english" | "sql"; limit?: number } = {}
+): Promise<TWQueryResult> {
+  return tw<TWQueryResult>("/query", {
+    method: "POST",
+    body: JSON.stringify({
+      query: englishOrSql,
+      language: opts.language ?? "english",
+      ...(opts.limit && { limit: opts.limit }),
+    }),
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Triggers — named watches that track deltas                          */
+/* ------------------------------------------------------------------ */
+
+export interface TWTrigger {
+  name: string;
+  query: string;
+  schedule: number; // seconds
+  status: "enabled" | "disabled";
+}
+
+export interface TWPollResult {
+  added: unknown[][];
+  deleted: unknown[][];
+}
+
+/**
+ * Create a watch. The English description is converted to SQL by Triggerware
+ * and the schedule is suggested if you don't provide one (otherwise pass
+ * seconds — 300 = poll every 5 min, 86400 = daily).
+ */
+export async function createTrigger(
+  name: string,
+  description: string,
+  opts: { scheduleSeconds?: number } = {}
+): Promise<TWTrigger> {
+  return tw<TWTrigger>("/triggers", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      query: description,
+      language: "english",
+      ...(opts.scheduleSeconds && { schedule: opts.scheduleSeconds }),
+    }),
+  });
+}
+
+export async function listTriggers(): Promise<TWTrigger[]> {
+  const r = await tw<{ triggers?: TWTrigger[] } | TWTrigger[]>("/triggers", { method: "GET" });
+  if (Array.isArray(r)) return r;
+  return r.triggers ?? [];
+}
+
+/**
+ * Pull deltas since the last poll. The Triggerware server clears the queue
+ * on successful response — so calling poll twice in a row returns empty
+ * the second time unless new data has arrived.
+ */
+export async function pollTrigger(name: string): Promise<TWPollResult> {
+  return tw<TWPollResult>(`/triggers/${encodeURIComponent(name)}/poll`, { method: "POST" });
+}
+
+export async function deleteTrigger(name: string): Promise<{ ok: true }> {
+  await tw(`/triggers/${encodeURIComponent(name)}`, { method: "DELETE" });
+  return { ok: true };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Connectors                                                          */
+/* ------------------------------------------------------------------ */
+
+export interface TWConnector {
+  name: string;
+  description?: string;
+  config_schema?: unknown;
+  tables?: Array<{ name: string; columns: Array<{ name: string; type: string; required?: boolean }> }>;
+}
+
+export async function listCatalog(): Promise<TWConnector[]> {
+  const r = await tw<{ connectors?: TWConnector[] } | TWConnector[]>("/connectors/catalog", { method: "GET" });
+  if (Array.isArray(r)) return r;
+  return r.connectors ?? [];
+}
+
+export async function listInstalled(): Promise<TWConnector[]> {
+  const r = await tw<{ connectors?: TWConnector[] } | TWConnector[]>("/connectors/installed", { method: "GET" });
+  if (Array.isArray(r)) return r;
+  return r.connectors ?? [];
+}
+
+export async function installConnector(name: string): Promise<void> {
+  await tw(`/connectors/installed/${encodeURIComponent(name)}`, { method: "PUT" });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Health / stats                                                      */
+/* ------------------------------------------------------------------ */
 
 export interface TriggerwareStats {
   configured: boolean;
-  implementation_status: "stub" | "partial" | "live";
-  planned_actions?: string[];
-  next_steps?: string[];
+  base_url?: string;
+  installed_connectors?: number;
+  active_triggers?: number;
+  implementation_status: "live" | "configured-but-no-connectors" | "not-configured";
 }
 
-export function getTriggerwareStats(): TriggerwareStats {
-  if (!isTriggerwareConfigured()) {
+export async function getTriggerwareStats(): Promise<TriggerwareStats> {
+  const cfg = getConfig();
+  if (!cfg) {
+    return { configured: false, implementation_status: "not-configured" };
+  }
+  try {
+    const [installed, triggers] = await Promise.all([listInstalled(), listTriggers()]);
     return {
-      configured: false,
-      implementation_status: "stub",
-      planned_actions: [
-        "save_research_to_drive",
-        "email_research_memo",
-        "add_calendar_followup",
-        "push_to_paralegal_queue",
-      ],
-      next_steps: [
-        "Sign up at Triggerware (partner challenge details on lablab.ai)",
-        "Set TRIGGERWARE_API_KEY in .env.local",
-        "Identify which workflow primitives apply to legal-research workflows",
-        "Wire /api/actions/{action_name} endpoints",
-      ],
+      configured: true,
+      base_url: cfg.baseUrl,
+      installed_connectors: installed.length,
+      active_triggers: triggers.length,
+      implementation_status: installed.length > 0 ? "live" : "configured-but-no-connectors",
+    };
+  } catch {
+    return {
+      configured: true,
+      base_url: cfg.baseUrl,
+      implementation_status: "configured-but-no-connectors",
     };
   }
-  return {
-    configured: true,
-    implementation_status: "stub",
-    planned_actions: [
-      "save_research_to_drive",
-      "email_research_memo",
-      "add_calendar_followup",
-      "push_to_paralegal_queue",
-    ],
-    next_steps: [
-      "Implement workflow trigger calls",
-      "Add 'Take action' UI on /ask answer card",
-    ],
-  };
+}
+
+export async function triggerwareHealthCheck(): Promise<{ ok: boolean; details: string }> {
+  if (!isTriggerwareConfigured()) {
+    return { ok: false, details: "TRIGGERWARE_API_KEY not set in .env.local" };
+  }
+  try {
+    const installed = await listInstalled();
+    return {
+      ok: true,
+      details: `Triggerware reachable. Installed connectors: ${installed.length}`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      details: e instanceof Error ? e.message : String(e),
+    };
+  }
 }

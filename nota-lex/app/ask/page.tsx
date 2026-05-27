@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { LexAnswer, AnswerCitation } from "@nota-lawyer/shared";
+import { VoiceInputButton } from "./VoiceInputButton";
 
 function AskPageInner() {
   const searchParams = useSearchParams();
@@ -118,7 +119,14 @@ function AskPageInner() {
           <Card>
             <CardContent className="space-y-5 pt-6">
               <div>
-                <label className="editorial-label mb-2 block">Your question (plain English)</label>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="editorial-label">Your question (plain English)</label>
+                  <VoiceInputButton
+                    onPartialTranscript={(t) => setQuestion(t)}
+                    onFinalTranscript={(t) => setQuestion((prev) => (prev && !prev.endsWith(t) ? prev + " " + t : t))}
+                    disabled={loading}
+                  />
+                </div>
                 <textarea
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}

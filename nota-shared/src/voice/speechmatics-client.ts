@@ -1,37 +1,30 @@
 /**
  * Speechmatics integration for Lex.NY — voice input for legal research.
  *
- * STATUS: STUB — NOT YET IMPLEMENTED.
+ * Browser opens a Realtime WebSocket to wss://eu2.rt.speechmatics.com/v2/?jwt=<temp>
+ * authenticated by a temporary JWT we mint server-side. The long-lived
+ * API key never leaves the server.
  *
- * Why this sponsor matters:
- *   - First 100 hackathon participants get $200 in FREE API credits
- *   - Voice input ("Hey Lex, what does Penal Law 400.00 say?") is genuinely
- *     accessible for pro se litigants who struggle with typed legal jargon
- *   - Real-time transcription would be useful for client-intake calls
- *     that feed the research engine
+ * Auth flow:
+ *   1. Browser hits POST /api/speechmatics/temp-key (this server)
+ *   2. We call createSpeechmaticsJWT({ type: 'rt', apiKey, ttl }) which
+ *      hits https://mp.speechmatics.com/v1/api_keys?type=rt with the
+ *      long-lived API key, returning a short-lived JWT.
+ *   3. Browser opens wss://...?jwt=<jwt>, streams 16kHz PCM audio,
+ *      receives AddTranscript messages, populates question textarea.
  *
- * What's needed to ship:
- *   1. Sign up at https://www.speechmatics.com and grab API key
- *   2. Add a microphone button to /ask page (browser MediaRecorder API)
- *   3. Stream audio via WebSocket to Speechmatics Real-Time STT
- *      (wss://eu2.rt.speechmatics.com/v2/ — see docs.speechmatics.com)
- *   4. On final transcript, populate the question textarea
- *   5. Optional: TTS the answer back via Speechmatics or Web Speech API
- *
- * Why this is a stub:
- *   Voice input is a UI change requiring real browser testing on the
- *   live demo URL (Cloudflare Tunnel needed first). Per user prefs:
- *   "It is helpful to admit jobs are incomplete. It is not acceptable
- *   to say something was done when it has not been tested." Skeleton
- *   below + the /api/speechmatics-stats endpoint return "stub" honestly
- *   so the judges see what's planned without a faked demo.
- *
- * Best Use Prize: Partner-tier rewards available (amount TBD).
+ * Hackathon: First 100 participants get $200 in free Speechmatics credits.
+ *            Best Use Prize tier: partner-level rewards.
  */
+
+import { createSpeechmaticsJWT, SpeechmaticsJWTError } from "@speechmatics/auth";
 
 export interface SpeechmaticsConfig {
   apiKey: string;
-  language?: string; // ISO 639-1, default "en"
+  /** ISO 639-1 default 'en' */
+  language: string;
+  /** 'eu' | 'usa' | 'au' — defaults to 'eu' (cheapest for solo hackathon dev) */
+  region: "eu" | "usa" | "au";
 }
 
 export function isSpeechmaticsConfigured(): boolean {
@@ -44,63 +37,110 @@ export function getSpeechmaticsConfig(): SpeechmaticsConfig | null {
   return {
     apiKey,
     language: process.env.SPEECHMATICS_LANGUAGE || "en",
+    region: (process.env.SPEECHMATICS_REGION as "eu" | "usa" | "au") || "eu",
   };
 }
 
 /**
- * Generate a temporary JWT for the browser to use when opening a
- * Speechmatics Real-Time websocket. The browser cannot use the long-lived
- * API key directly — it requests a short-lived temporary key from our
- * backend, which is what this helper produces.
- *
- * NOT YET IMPLEMENTED. Per Speechmatics docs, POST to
- * https://mp.speechmatics.com/v1/api_keys?type=rt with the long-lived
- * API key in the Authorization header, body { "ttl": 3600 }.
- *
- * Returns null until implemented + Speechmatics key is provisioned.
+ * Mint a short-lived JWT for the browser to use when opening the
+ * Realtime WebSocket. Default TTL 60 seconds — the browser uses it
+ * immediately to open the WS; once the WS is open the JWT is no longer
+ * needed.
  */
-export async function issueTemporaryRTKey(opts: { ttlSeconds?: number } = {}): Promise<{
-  key: string | null;
-  expires_at: number | null;
-  stub: boolean;
+export async function issueTemporaryRTKey(opts: {
+  ttlSeconds?: number;
+  clientRef?: string;
+} = {}): Promise<{
+  jwt: string;
+  ttl: number;
+  region: "eu" | "usa" | "au";
+  ws_url: string;
 }> {
   const cfg = getSpeechmaticsConfig();
   if (!cfg) {
-    return { key: null, expires_at: null, stub: true };
+    throw new Error(
+      "Speechmatics not configured. Set SPEECHMATICS_API_KEY in .env.local. " +
+      "First 100 hackathon participants get $200 free credits at https://www.speechmatics.com"
+    );
   }
-  void opts; // suppress unused warning until implemented
-  // TODO: real implementation — POST to mp.speechmatics.com/v1/api_keys?type=rt
-  // with `Authorization: Bearer ${cfg.apiKey}`, body `{ "ttl": opts.ttlSeconds || 3600 }`.
-  // Response shape: { key_value: "ey...", project_id: "...", id: "..." }
-  return { key: null, expires_at: null, stub: true };
+  const ttl = opts.ttlSeconds ?? 60;
+  try {
+    const jwt = await createSpeechmaticsJWT({
+      type: "rt",
+      apiKey: cfg.apiKey,
+      ttl,
+      region: cfg.region,
+      clientRef: opts.clientRef ?? "lex-ny-browser",
+    });
+    // Region → WS URL. eu2 is the modern endpoint name.
+    const wsByRegion: Record<typeof cfg.region, string> = {
+      eu: "wss://eu2.rt.speechmatics.com/v2",
+      usa: "wss://us.rt.speechmatics.com/v2",
+      au: "wss://au.rt.speechmatics.com/v2",
+    };
+    return {
+      jwt,
+      ttl,
+      region: cfg.region,
+      ws_url: wsByRegion[cfg.region],
+    };
+  } catch (e) {
+    if (e instanceof SpeechmaticsJWTError) {
+      throw new Error(`Speechmatics JWT error (${e.type}): ${e.message}`);
+    }
+    throw e;
+  }
 }
 
 export interface SpeechmaticsStats {
   configured: boolean;
-  implementation_status: "stub" | "partial" | "live";
-  next_steps?: string[];
+  region?: string;
+  language?: string;
+  ws_endpoint?: string;
+  implementation_status: "live" | "configured-but-untested" | "not-configured";
 }
 
 export function getSpeechmaticsStats(): SpeechmaticsStats {
-  if (!isSpeechmaticsConfigured()) {
+  const cfg = getSpeechmaticsConfig();
+  if (!cfg) {
     return {
       configured: false,
-      implementation_status: "stub",
-      next_steps: [
-        "Sign up at https://www.speechmatics.com (first 100 participants get $200 free credits)",
-        "Set SPEECHMATICS_API_KEY in .env.local",
-        "Wire microphone button into /ask page (browser MediaRecorder)",
-        "Open WebSocket to wss://eu2.rt.speechmatics.com/v2/ from browser",
-      ],
+      implementation_status: "not-configured",
     };
   }
+  const wsByRegion: Record<typeof cfg.region, string> = {
+    eu: "wss://eu2.rt.speechmatics.com/v2",
+    usa: "wss://us.rt.speechmatics.com/v2",
+    au: "wss://au.rt.speechmatics.com/v2",
+  };
   return {
     configured: true,
-    implementation_status: "stub",
-    next_steps: [
-      "Implement issueTemporaryRTKey() with real HTTP call to mp.speechmatics.com",
-      "Add microphone UI to /ask page",
-      "Wire transcript-final event to populate question textarea",
-    ],
+    region: cfg.region,
+    language: cfg.language,
+    ws_endpoint: wsByRegion[cfg.region],
+    implementation_status: "configured-but-untested",
   };
+}
+
+export async function speechmaticsHealthCheck(): Promise<{ ok: boolean; details: string }> {
+  if (!isSpeechmaticsConfigured()) {
+    return {
+      ok: false,
+      details: "SPEECHMATICS_API_KEY not set in .env.local",
+    };
+  }
+  // Real check: mint a 10-second JWT. If the long-lived key is bad,
+  // mp.speechmatics.com returns 401 and we propagate that.
+  try {
+    const r = await issueTemporaryRTKey({ ttlSeconds: 10, clientRef: "lex-ny-healthcheck" });
+    return {
+      ok: true,
+      details: `Speechmatics ${r.region} region reachable; JWT minted ttl=${r.ttl}s`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      details: e instanceof Error ? e.message : String(e),
+    };
+  }
 }
