@@ -132,7 +132,7 @@ export async function speechmaticsHealthCheck(): Promise<{ ok: boolean; details:
   // Real check: mint a 10-second JWT. If the long-lived key is bad,
   // mp.speechmatics.com returns 401 and we propagate that.
   try {
-    const r = await issueTemporaryRTKey({ ttlSeconds: 10, clientRef: "lex-ny-healthcheck" });
+    const r = await issueTemporaryRTKey({ ttlSeconds: 60, clientRef: "lex-ny-healthcheck" });
     return {
       ok: true,
       details: `Speechmatics ${r.region} region reachable; JWT minted ttl=${r.ttl}s`,
