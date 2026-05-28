@@ -301,55 +301,47 @@ export async function expandViaGraph(opts: {
   }
 
   return withSession(async (s) => {
-    const [citing, cited, related] = await Promise.all([
-      // Opinions citing the seeds
-      seedOpinionClIds.length === 0
-        ? Promise.resolve([] as Neo4jRecord[])
-        : s
-            .run(
-              `
-              MATCH (citer:Opinion)-[:CITES*1..${maxDepth}]->(seed:Opinion)
-              WHERE seed.cl_id IN $clIds
-              RETURN DISTINCT citer.cl_id AS cl_id, citer.case_name AS case_name, 1 AS depth
-              LIMIT $lim
-              `,
-              { clIds: seedOpinionClIds, lim: neo4j.int(perBucketLimit) }
-            )
-            .then((r) => r.records),
+    // IMPORTANT: Neo4j JS driver sessions are NOT thread-safe for concurrent
+    // queries — Promise.all on one session throws "Queries cannot be run
+    // directly on a session with an open transaction". Use serial awaits.
+    const citing: Neo4jRecord[] = seedOpinionClIds.length === 0
+      ? []
+      : (await s.run(
+          `
+          MATCH (citer:Opinion)-[:CITES*1..${maxDepth}]->(seed:Opinion)
+          WHERE seed.cl_id IN $clIds
+          RETURN DISTINCT citer.cl_id AS cl_id, citer.case_name AS case_name, 1 AS depth
+          LIMIT $lim
+          `,
+          { clIds: seedOpinionClIds, lim: neo4j.int(perBucketLimit) }
+        )).records;
 
-      // Opinions cited by the seeds
-      seedOpinionClIds.length === 0
-        ? Promise.resolve([] as Neo4jRecord[])
-        : s
-            .run(
-              `
-              MATCH (seed:Opinion)-[:CITES*1..${maxDepth}]->(cited:Opinion)
-              WHERE seed.cl_id IN $clIds
-              RETURN DISTINCT cited.cl_id AS cl_id, cited.case_name AS case_name, 1 AS depth
-              LIMIT $lim
-              `,
-              { clIds: seedOpinionClIds, lim: neo4j.int(perBucketLimit) }
-            )
-            .then((r) => r.records),
+    const cited: Neo4jRecord[] = seedOpinionClIds.length === 0
+      ? []
+      : (await s.run(
+          `
+          MATCH (seed:Opinion)-[:CITES*1..${maxDepth}]->(cited:Opinion)
+          WHERE seed.cl_id IN $clIds
+          RETURN DISTINCT cited.cl_id AS cl_id, cited.case_name AS case_name, 1 AS depth
+          LIMIT $lim
+          `,
+          { clIds: seedOpinionClIds, lim: neo4j.int(perBucketLimit) }
+        )).records;
 
-      // Statutes that share an applying opinion with seed statutes
-      seedStatuteCitationKeys.length === 0
-        ? Promise.resolve([] as Neo4jRecord[])
-        : s
-            .run(
-              `
-              MATCH (seed:Statute)<-[:APPLIES]-(o:Opinion)-[:APPLIES]->(related:Statute)
-              WHERE seed.citation_key IN $keys AND seed <> related
-              RETURN related.citation_key AS citation_key,
-                     related.title AS title,
-                     count(DISTINCT o) AS co_citations
-              ORDER BY co_citations DESC
-              LIMIT $lim
-              `,
-              { keys: seedStatuteCitationKeys, lim: neo4j.int(perBucketLimit) }
-            )
-            .then((r) => r.records),
-    ]);
+    const related: Neo4jRecord[] = seedStatuteCitationKeys.length === 0
+      ? []
+      : (await s.run(
+          `
+          MATCH (seed:Statute)<-[:APPLIES]-(o:Opinion)-[:APPLIES]->(related:Statute)
+          WHERE seed.citation_key IN $keys AND seed <> related
+          RETURN related.citation_key AS citation_key,
+                 related.title AS title,
+                 count(DISTINCT o) AS co_citations
+          ORDER BY co_citations DESC
+          LIMIT $lim
+          `,
+          { keys: seedStatuteCitationKeys, lim: neo4j.int(perBucketLimit) }
+        )).records;
 
     return {
       citing_opinions: citing.map((r) => ({

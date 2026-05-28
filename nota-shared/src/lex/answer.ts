@@ -108,7 +108,10 @@ function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live:
       kind: "opinion",
       id: op.opinion_id,
       display: op.citation ? `${op.case_name}, ${op.citation}` : op.case_name,
-      url: `https://www.courtlistener.com/opinion/${op.opinion_id}/`,
+      // CourtListener URLs use the cluster ID (cl_id), not the Postgres UUID.
+      url: op.cl_id
+        ? `https://www.courtlistener.com/opinion/${op.cl_id}/`
+        : `https://www.courtlistener.com/`,
       snippet: op.ai_holding || op.ai_summary || undefined,
     });
 
@@ -230,13 +233,21 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
   let graphRelated: Array<{ citation_key: string; title: string; law_name: string; law_id: string; location_id: string; text: string; co_citations: number }> = [];
   let graph_provider: string | undefined;
   let graph_expansion: { citing_opinions: number; cited_opinions: number; related_statutes: number } | undefined;
-  if (isNeo4jConfigured() && retrieval.statutes.length > 0) {
+  if (isNeo4jConfigured() && (retrieval.statutes.length > 0 || retrieval.opinions.length > 0)) {
     try {
       const seedStatuteKeys = retrieval.statutes.slice(0, 5).map(
         (s) => `${s.law_id} ${s.location_id}`
       );
+      // NEW: also seed with the top opinions so CITES-graph traversal fires.
+      // Without this, the graph layer is dark — APPLIES edges don't exist yet
+      // (need full opinion text to extract statute citations), but CITES does
+      // (4.94M opinion->opinion edges) and gives us "what cites this case".
+      const seedOpinionClIds = retrieval.opinions
+        .slice(0, 5)
+        .map((o) => o.cl_id)
+        .filter((c): c is string => !!c);
       const expansion: GraphExpansionResult = await expandViaGraph({
-        seedOpinionClIds: [],
+        seedOpinionClIds,
         seedStatuteCitationKeys: seedStatuteKeys,
         maxDepth: 1,
         perBucketLimit: 5,
@@ -291,6 +302,15 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
         }
       }
       if (graphRelated.length > 0) graph_provider = "neo4j";
+      // Also mark Neo4j as "live" if the CITES traversal returned opinion
+      // neighbors, even if APPLIES (related statutes) is still empty. APPLIES
+      // requires opinion full-text extraction which is a separate pipeline.
+      if (!graph_provider && (
+        expansion.citing_opinions.length > 0 ||
+        expansion.cited_opinions.length > 0
+      )) {
+        graph_provider = "neo4j";
+      }
     } catch (e) {
       console.warn(`Graph expansion failed (continuing): ${e instanceof Error ? e.message : e}`);
     }

@@ -38,7 +38,8 @@ function getPgPool(): pg.Pool {
 }
 
 export interface OpinionHit {
-  opinion_id: string;
+  opinion_id: string;     // Postgres UUID (FK for SQL joins)
+  cl_id: string | null;   // CourtListener cluster ID (Neo4j MERGE key)
   case_name: string;
   citation: string | null;
   court_id: string;
@@ -170,7 +171,7 @@ export async function retrieve(
     opIds.length === 0
       ? Promise.resolve({ rows: [] as any[] })
       : pool.query(
-          `SELECT id, case_name, citation, court_id, decision_date, ai_summary, ai_holding, text_plain
+          `SELECT id, source_id, case_name, citation, court_id, decision_date, ai_summary, ai_holding, text_plain
            FROM opinions WHERE id = ANY($1::uuid[])`,
           [opIds]
         ),
@@ -189,6 +190,7 @@ export async function retrieve(
     const kw = keywordScore((row.case_name || "") + " " + (row.text_plain || ""), question);
     return {
       opinion_id: row.id,
+      cl_id: row.source_id ?? null,
       case_name: row.case_name,
       citation: row.citation,
       court_id: row.court_id,
