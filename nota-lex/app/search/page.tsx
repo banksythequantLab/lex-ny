@@ -48,6 +48,7 @@ const COURT_NAMES: Record<string, string> = {
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
+  const [minCites, setMinCites] = useState(0);
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +59,9 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/search/cases?q=" + encodeURIComponent(q) + "&limit=20");
+      const params = new URLSearchParams({ q, limit: "20" });
+      if (minCites > 0) params.set("min_cites", String(minCites));
+      const r = await fetch("/api/search/cases?" + params.toString());
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "Search failed");
       setRes(d);
@@ -125,7 +128,7 @@ export default function SearchPage() {
           </button>
         </form>
 
-        <div className="flex flex-wrap gap-2 mb-10 text-xs">
+        <div className="flex flex-wrap gap-2 mb-4 text-xs">
           {["summary judgment standard", "landlord tenant retaliation", "weight of the evidence criminal appeal", "Article 78 statute of limitations", "wrongful termination at-will employment"].map((s) => (
             <button
               key={s}
@@ -136,6 +139,43 @@ export default function SearchPage() {
               {s}
             </button>
           ))}
+        </div>
+
+        {/* Citation-influence filter row. Lets the demo zoom past the
+            current 'old-bias' (the embed job started historical and is
+            climbing forward) by demanding minimum graph-cited cases. */}
+        <div className="flex flex-wrap items-center gap-2 mb-10 text-xs">
+          <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mr-1">
+            Min citations
+          </span>
+          {[
+            { label: "any", val: 0 },
+            { label: "≥10", val: 10 },
+            { label: "≥100", val: 100 },
+            { label: "≥1k (landmarks)", val: 1000 },
+          ].map((opt) => {
+            const active = minCites === opt.val;
+            return (
+              <button
+                key={opt.val}
+                type="button"
+                onClick={() => setMinCites(opt.val)}
+                className={
+                  "px-3 py-1.5 border rounded-full text-xs transition-colors " +
+                  (active
+                    ? "border-[var(--color-seal-deep)] bg-[var(--color-seal-deep)] text-white"
+                    : "border-[var(--color-rule)]/30 text-[var(--color-ink-2)] hover:border-[var(--color-seal-deep)]")
+                }
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+          {minCites > 0 && (
+            <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-seal-deep)] ml-2">
+              Filtering for cases cited ≥{minCites.toLocaleString()} times
+            </span>
+          )}
         </div>
 
         {error && (

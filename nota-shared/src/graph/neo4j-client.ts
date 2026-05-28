@@ -371,7 +371,7 @@ export interface Neo4jStats {
   configured: boolean;
   node_counts: Record<string, number>;
   relationship_counts: Record<string, number>;
-  top_cited_opinions: Array<{ case_name: string; cited_by_count: number }>;
+  top_cited_opinions: Array<{ cl_id: string; case_name: string; cited_by_count: number }>;
   top_applied_statutes: Array<{ citation_key: string; title: string; applied_by_count: number }>;
   total_nodes: number;
   total_relationships: number;
@@ -409,7 +409,7 @@ export async function getGraphStats(): Promise<Neo4jStats> {
 
     const topCited = await s.run(`
       MATCH (citer:Opinion)-[:CITES]->(o:Opinion)
-      RETURN o.case_name AS case_name, count(citer) AS cited_by_count
+      RETURN o.cl_id AS cl_id, o.case_name AS case_name, count(citer) AS cited_by_count
       ORDER BY cited_by_count DESC
       LIMIT 5
     `).catch(() => ({ records: [] as Neo4jRecord[] }));
@@ -445,6 +445,7 @@ export async function getGraphStats(): Promise<Neo4jStats> {
       total_nodes,
       total_relationships,
       top_cited_opinions: topCited.records.map((r) => ({
+        cl_id: r.get("cl_id") as string,
         case_name: r.get("case_name") as string,
         cited_by_count: r.get("cited_by_count").toNumber(),
       })),
