@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { answer } from "@nota-lawyer/shared";
+import {
+  answer,
+  rateLimit,
+  clientIp,
+  rateLimitResponse,
+} from "@nota-lawyer/shared";
 import { z } from "zod";
 
 const AskRequestSchema = z.object({
@@ -12,7 +17,25 @@ const AskRequestSchema = z.object({
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/**
+ * /api/ask — non-streaming Q&A endpoint.
+ *
+ * Rate-limited at 10 requests / minute per client IP. Each call triggers
+ * three Bright Data requests + a Groq completion + Postgres vector search
+ * + Neo4j graph expansion, so this is the costliest endpoint on the box.
+ */
 export async function POST(req: NextRequest) {
+  // Rate limit BEFORE doing any expensive work.
+  const limit = rateLimit({
+    key: `ask:${clientIp(req)}`,
+    max: 10,
+    windowMs: 60_000,
+  });
+  if (!limit.allowed) {
+    const r = rateLimitResponse(limit);
+    return new NextResponse(r.body, { status: r.status, headers: r.headers });
+  }
+
   try {
     const body = await req.json();
     const parsed = AskRequestSchema.safeParse(body);
@@ -27,7 +50,10 @@ export async function POST(req: NextRequest) {
       useLiveSerp: parsed.data.use_live_serp,
     });
 
-    return NextResponse.json(result);
+    const res = NextResponse.json(result);
+    res.headers.set("X-RateLimit-Remaining", String(limit.remaining));
+    res.headers.set("X-RateLimit-Reset", String(Math.ceil(limit.resetAt / 1000)));
+    return res;
   } catch (e) {
     console.error("Ask failed:", e);
     return NextResponse.json(

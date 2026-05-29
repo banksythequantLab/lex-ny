@@ -277,3 +277,15 @@ export {
   type TriggerwareStats,
   type TriggerwareConfig,
 } from "./actions/index.js";
+
+
+// ============================================================
+//  Rate limiting (in-memory token bucket, single-node)
+// ============================================================
+export {
+  rateLimit,
+  clientIp,
+  rateLimitResponse,
+  type RateLimitOptions,
+  type RateLimitResult,
+} from "./rate-limit.js";

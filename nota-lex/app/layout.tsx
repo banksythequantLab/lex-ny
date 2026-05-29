@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Trademark in a Box — Nota.Lawyer",
+  title: "Lex.NY — New York legal research, citation-anchored",
   description:
-    "Federal trademark registration at the USPTO for $350 — the exact same fee the government charges. Free TESS conflict search powered by AI. Optional attorney review for $50.",
+    "Lex.NY is a research engine for New York law. 5.5 million records, a 6.9 million-edge citation graph, every claim tied to a real source. Supervised by a NY-licensed attorney. Not legal advice.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +19,76 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body className="bg-[var(--color-paper)] text-[var(--color-ink)]">
+        {children}
+        <Footer />
+      </body>
     </html>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-t border-[var(--color-rule)]/30 bg-[var(--color-paper-2)] mt-16">
+      <div className="max-w-[1180px] mx-auto px-7 py-10 grid md:grid-cols-3 gap-10 text-sm text-[var(--color-ink-2)] leading-relaxed">
+        <div>
+          <div className="font-[family-name:var(--font-display)] font-semibold text-[var(--color-ink)] text-lg mb-2">
+            Lex.NY
+          </div>
+          <p className="mb-3">
+            New York legal research engine. Every case, every statute, every cite
+            verifiable. Supervised by a NY-licensed attorney.
+          </p>
+          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+            Open source · Apache-2.0
+          </p>
+        </div>
+
+        <div>
+          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink)] mb-3">
+            Pages
+          </div>
+          <ul className="space-y-1.5 list-none p-0">
+            <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
+            <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
+            <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
+            <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
+            <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
+            <li><Link href="/blog" className="hover:text-[var(--color-ink)]">Blog</Link></li>
+            <li><Link href="/about" className="hover:text-[var(--color-ink)]">About</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink)] mb-3">
+            This is not legal advice
+          </div>
+          <p className="mb-3">
+            Lex.NY is a research tool. Using it does not create an attorney-client
+            relationship. For binding advice on a specific situation, engage a
+            qualified NY attorney.
+          </p>
+          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+            NY RPC 7.1 · Supervised
+          </p>
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--color-rule)]/30">
+        <div className="max-w-[1180px] mx-auto px-7 py-4 flex flex-wrap justify-between items-center gap-3 text-xs text-[var(--color-ink-2)]">
+          <span>© 2026 Lex.NY · Built by a NY attorney for the bar</span>
+          <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+            <a
+              href="https://github.com/banksythequantLab/lex-ny"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--color-ink)]"
+            >
+              github.com/banksythequantLab/lex-ny
+            </a>
+          </span>
+        </div>
+      </div>
+    </footer>
   );
 }

@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
-import { answerStream } from "@nota-lawyer/shared";
+import {
+  answerStream,
+  rateLimit,
+  clientIp,
+  rateLimitResponse,
+} from "@nota-lawyer/shared";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +42,19 @@ function sseEvent(event: string, data: unknown): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit BEFORE opening the stream. The streaming endpoint is more
+  // expensive than /api/ask because each call holds an upstream Groq
+  // connection open for ~12 seconds; we bound it more aggressively.
+  const limit = rateLimit({
+    key: `ask-stream:${clientIp(req)}`,
+    max: 5,
+    windowMs: 60_000,
+  });
+  if (!limit.allowed) {
+    const r = rateLimitResponse(limit);
+    return new Response(r.body, { status: r.status, headers: r.headers });
+  }
+
   let body: AskRequest;
   try {
     body = await req.json();
