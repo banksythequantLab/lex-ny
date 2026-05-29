@@ -190,3 +190,43 @@ export async function chatJSON<T>(opts: {
     }
   }
 }
+
+
+/**
+ * Streaming version of chat() for SSE endpoints.
+ *
+ * Yields content deltas as the LLM produces them. The OpenAI SDK's
+ * stream:true mode returns an async iterable of chunks; we forward
+ * each chunk's delta.content. Tool-calls and finish_reason are not
+ * exposed here — only text deltas — to keep the API surface tight
+ * for the use case (Lex.NY's /api/ask/stream).
+ *
+ * Usage:
+ *   for await (const delta of chatStream({ system, messages, ... })) {
+ *     res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+ *   }
+ */
+export async function* chatStream(opts: {
+  system: string;
+  messages: OpenAI.Chat.ChatCompletionMessageParam[];
+  temperature?: number;
+  max_tokens?: number;
+}): AsyncGenerator<string, void, unknown> {
+  const { client, config } = getLLMClient();
+
+  const stream = await client.chat.completions.create({
+    model: config.model,
+    messages: [
+      { role: "system", content: opts.system },
+      ...opts.messages,
+    ],
+    temperature: opts.temperature ?? 0.2,
+    max_tokens: opts.max_tokens ?? 4096,
+    stream: true,
+  });
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices?.[0]?.delta?.content;
+    if (delta) yield delta;
+  }
+}

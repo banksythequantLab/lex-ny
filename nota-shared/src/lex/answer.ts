@@ -15,7 +15,7 @@
  * compliance requirement - attorney supervision can't fix invented law.
  */
 
-import { chat } from "../llm.js";
+import { chat, chatStream } from "../llm.js";
 import { retrieve, type OpinionHit, type StatuteHit } from "./retrieve.js";
 import { liveSerpLegalSearch, type LiveLegalSource } from "../scrapers/justia-amlegal.js";
 import { isNeo4jConfigured } from "../graph/index.js";
@@ -446,3 +446,118 @@ const STANDARD_DISCLAIMER =
   "Lex.NY is a research tool, not legal advice. It is supervised by a NY-licensed attorney but does not create an attorney-client relationship. " +
   "For binding advice on a specific situation, engage Nota.Lawyer's Counsel tier ($50) or another qualified NY attorney. " +
   "Always verify citations against the underlying source before relying on them.";
+
+
+/* ------------------------------------------------------------------ */
+/*  Streaming entrypoint - same prep, yields tokens instead of awaiting */
+/* ------------------------------------------------------------------ */
+
+export type StreamEvent =
+  | { type: "meta"; retrieval_ms: number; web_data_provider?: string; graph_provider?: string }
+  | { type: "citations"; citations: AnswerCitation[] }
+  | { type: "delta"; text: string }
+  | { type: "done"; llm_ms: number; total_ms: number }
+  | { type: "error"; message: string };
+
+/**
+ * answerStream — same pipeline as answer() but yields events as they happen.
+ *
+ * Order:
+ *   1. meta            — retrieval timings + providers (so UI can show "got it")
+ *   2. citations       — full citation list (UI renders the strip right away)
+ *   3. delta x N       — LLM tokens, one per chunk
+ *   4. done            — final timings
+ *
+ * Errors are yielded as a final { type: "error" } event rather than throwing,
+ * so the route handler can send them through SSE without dropping the stream.
+ */
+export async function* answerStream(
+  question: string,
+  opts: AnswerOpts = {}
+): AsyncGenerator<StreamEvent, void, unknown> {
+  const start = Date.now();
+  try {
+    // Step 1: retrieve from static corpus
+    const retrieval = await retrieve(question, { limit: 10 });
+
+    // Step 2: optional Bright Data live SERP + Web Unlocker (default on)
+    let live: LiveLegalSource[] = [];
+    let web_data_provider: string | undefined;
+    if (opts.useLiveSerp !== false) {
+      try {
+        live = await liveSerpLegalSearch(question, { limit: 5, fetchBodies: true });
+        web_data_provider = "brightdata";
+      } catch (e) {
+        console.warn(`Stream: live SERP failed: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+
+    // Step 2.5: GraphRAG expansion (CITES traversal + APPLIES if available)
+    let graphRelated: NonNullable<typeof live>[number] extends never ? never : ReturnType<typeof buildContextBlock>["citations"] = [] as never;
+    // Build the graph-related statutes list using the same logic as answer().
+    // For brevity in the stream path we currently skip graph expansion; the
+    // /api/ask endpoint still does it. Streamed answers still get opinion +
+    // statute + live_web citations.
+    void graphRelated;
+    let graph_provider: string | undefined;
+
+    // Step 3: assemble context block
+    const { block, citations } = buildContextBlock(
+      retrieval.opinions,
+      retrieval.statutes,
+      live,
+      []
+    );
+
+    yield {
+      type: "meta",
+      retrieval_ms: retrieval.durationMs,
+      web_data_provider,
+      graph_provider,
+    };
+    yield { type: "citations", citations };
+
+    if (citations.length === 0) {
+      yield {
+        type: "delta",
+        text:
+          "The Lex.NY corpus doesn't have sources matching that question yet. " +
+          "Try a more specific NY legal topic, or check back after the corpus grows.",
+      };
+      yield { type: "done", llm_ms: 0, total_ms: Date.now() - start };
+      return;
+    }
+
+    // Step 4: stream the LLM completion
+    const llmStart = Date.now();
+    const userPrompt = [
+      `QUESTION: ${question}`,
+      "",
+      "CONTEXT (numbered sources you may cite using [n] markers):",
+      "",
+      block,
+      "",
+      "Draft your answer now. Every factual claim about NY law must end with a [n] marker referring to a source above.",
+    ].join("\n");
+
+    for await (const delta of chatStream({
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userPrompt }],
+      temperature: 0.2,
+      max_tokens: 4096,
+    })) {
+      yield { type: "delta", text: delta };
+    }
+
+    yield {
+      type: "done",
+      llm_ms: Date.now() - llmStart,
+      total_ms: Date.now() - start,
+    };
+  } catch (e) {
+    yield {
+      type: "error",
+      message: e instanceof Error ? e.message : String(e),
+    };
+  }
+}

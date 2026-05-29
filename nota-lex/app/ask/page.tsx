@@ -31,7 +31,10 @@ function AskPageInner() {
     setError(null);
     setResult(null);
     setLoading(true);
+    setProgressMsg("Embedding your question…");
 
+    // Streaming SSE pipeline. Citations arrive ~12s in; deltas stream after.
+    // Stages drive the progress message until citations land.
     const stages = [
       "Embedding your question…",
       "Searching the NY appellate corpus…",
@@ -40,32 +43,118 @@ function AskPageInner() {
       "Asking Llama 3.3 70B to draft an answer with citations…",
     ];
     let stageIdx = 0;
-    setProgressMsg(stages[0]);
     const stageInterval = setInterval(() => {
       stageIdx = Math.min(stageIdx + 1, stages.length - 1);
       setProgressMsg(stages[stageIdx]);
     }, 1800);
 
+    // Progressive answer state — built up from streamed events.
+    let acc = "";
+    let citations: AnswerCitation[] = [];
+    let retrievalMs = 0;
+    let llmMs = 0;
+    let totalMs = 0;
+    let webProvider: string | undefined;
+    let graphProvider: string | undefined;
+
     try {
-      const res = await fetch("/api/ask", {
+      const res = await fetch("/api/ask/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
         body: JSON.stringify({ question: q, use_live_serp: useLiveSerp }),
       });
-      clearInterval(stageInterval);
-      setProgressMsg(null);
-
-      if (!res.ok) {
-        const errBody = await res.text();
-        throw new Error(`Lex.NY answer failed (${res.status}): ${errBody.slice(0, 200)}`);
+      if (!res.ok || !res.body) {
+        throw new Error(`Stream open failed: ${res.status}`);
       }
-      const data: LexAnswer = await res.json();
-      setResult(data);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE events are separated by blank lines.
+        let sep: number;
+        while ((sep = buffer.indexOf("\n\n")) !== -1) {
+          const raw = buffer.slice(0, sep);
+          buffer = buffer.slice(sep + 2);
+          if (!raw || raw.startsWith(":")) continue;
+
+          let event = "message";
+          let data = "";
+          for (const line of raw.split("\n")) {
+            if (line.startsWith("event:")) event = line.slice(6).trim();
+            else if (line.startsWith("data:")) data += line.slice(5).replace(/^ /, "");
+          }
+          if (!data) continue;
+          let payload: any;
+          try {
+            payload = JSON.parse(data);
+          } catch {
+            continue;
+          }
+
+          if (event === "meta") {
+            retrievalMs = payload.retrieval_ms ?? 0;
+            webProvider = payload.web_data_provider;
+            graphProvider = payload.graph_provider;
+            clearInterval(stageInterval);
+            setProgressMsg("Drafting answer with cited sources…");
+          } else if (event === "citations") {
+            citations = payload.citations || [];
+            // Render the citation strip immediately, even before any text.
+            setResult({
+              question: q,
+              answer: "",
+              citations,
+              retrieval_duration_ms: retrievalMs,
+              llm_duration_ms: 0,
+              total_duration_ms: 0,
+              web_data_provider: webProvider,
+              graph_provider: graphProvider,
+              disclaimer: "",
+            } as LexAnswer);
+          } else if (event === "delta") {
+            acc += payload.text || "";
+            setResult({
+              question: q,
+              answer: acc,
+              citations,
+              retrieval_duration_ms: retrievalMs,
+              llm_duration_ms: 0,
+              total_duration_ms: 0,
+              web_data_provider: webProvider,
+              graph_provider: graphProvider,
+              disclaimer: "",
+            } as LexAnswer);
+          } else if (event === "done") {
+            llmMs = payload.llm_ms ?? 0;
+            totalMs = payload.total_ms ?? 0;
+            setResult({
+              question: q,
+              answer: acc,
+              citations,
+              retrieval_duration_ms: retrievalMs,
+              llm_duration_ms: llmMs,
+              total_duration_ms: totalMs,
+              web_data_provider: webProvider,
+              graph_provider: graphProvider,
+              disclaimer:
+                "Lex.NY is a research tool, not legal advice. Always verify citations against the underlying source before relying on them.",
+            } as LexAnswer);
+          } else if (event === "error") {
+            throw new Error(payload.message || "stream error");
+          }
+        }
+      }
     } catch (e) {
-      clearInterval(stageInterval);
-      setProgressMsg(null);
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
+      clearInterval(stageInterval);
+      setProgressMsg(null);
       setLoading(false);
     }
   }

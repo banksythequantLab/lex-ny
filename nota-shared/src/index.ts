@@ -82,6 +82,7 @@ export {
   getLLMClient,
   chat,
   chatJSON,
+  chatStream,
   type LLMProvider,
 } from "./llm.js";
 
@@ -139,12 +140,14 @@ export {
 export {
   retrieve,
   answer,
+  answerStream,
   type OpinionHit,
   type StatuteHit,
   type RetrievalResult,
   type LexAnswer,
   type AnswerCitation,
   type AnswerOpts,
+  type StreamEvent,
 } from "./lex/index.js";
 
 

@@ -11,7 +11,9 @@ export {
 
 export {
   answer,
+  answerStream,
   type LexAnswer,
   type AnswerCitation,
   type AnswerOpts,
+  type StreamEvent,
 } from "./answer.js";
