@@ -214,10 +214,12 @@ def main():
 
     # Load statutes for citation resolution
     print("Loading statutes for citation resolution...")
-    cur.execute("SELECT law_id, location_id, citation_key FROM statutes WHERE doc_type='SECTION'")
+    # citation_key is not a stored column - synthesize it the same way the
+    # Neo4j sync did: "<law_id> <location_id>".
+    cur.execute("SELECT law_id, location_id FROM statutes WHERE doc_type='SECTION'")
     statute_key = {}
-    for law_id, loc_id, ckey in cur.fetchall():
-        # Index by (law_id, location_id) AND (law_id, location_id without parens)
+    for law_id, loc_id in cur.fetchall():
+        ckey = f"{law_id} {loc_id}"
         statute_key[(law_id, str(loc_id))] = ckey
     print(f"  loaded {len(statute_key):,} statute sections")
 
@@ -248,7 +250,13 @@ def main():
 
     # Open the bz2 as text, with the same backslash-escape CSV options
     # that worked in Stage 1.
-    csv.field_size_limit(sys.maxsize)
+    # Windows Python has 32-bit C long here; sys.maxsize (2^63-1) overflows.
+    # 2^31-1 is the max value field_size_limit() will accept, plenty for our
+    # opinion text cells (max observed ~130KB).
+    try:
+        csv.field_size_limit(sys.maxsize)
+    except OverflowError:
+        csv.field_size_limit(2**31 - 1)
 
     write_conn = psycopg2.connect(**PG)
     write_cur = write_conn.cursor()
