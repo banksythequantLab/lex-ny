@@ -60,6 +60,18 @@ export interface LexAnswer {
     remembered: boolean;                   // whether this Q&A was persisted post-answer
     session_id?: string;
   };
+  /**
+   * Best raw cosine similarity across all retrieved opinions and statutes.
+   * 1.0 = perfect match, ~0.7+ = strong, ~0.55-0.7 = weak, <0.55 = no good match.
+   * The UI uses this to render a confidence chip on /ask.
+   */
+  best_corpus_similarity?: number;
+  /**
+   * True when best_corpus_similarity is below the abstain floor (0.55).
+   * When set, callers should display a "weak corpus match" warning;
+   * the LLM has also been told to lean on live_web sources only.
+   */
+  weak_corpus?: boolean;
   disclaimer: string;
 }
 
@@ -211,6 +223,20 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
   // Step 1: retrieve from static corpus
   const retrieval = await retrieve(question, { limit: 10 });
 
+  // Step 1.5: compute the best raw vector similarity across opinions + statutes.
+  // This is the confidence signal. cosine in pgvector returns [-1, 1] but for
+  // mxbai-embed-large in practice we see [0.3, 0.85]. Anything < 0.55 means
+  // the corpus doesn't have a strong match.
+  const WEAK_CORPUS_FLOOR = 0.55;
+  const bestOpVec = retrieval.opinions.length
+    ? Math.max(...retrieval.opinions.map((o) => o.vector_score))
+    : 0;
+  const bestStVec = retrieval.statutes.length
+    ? Math.max(...retrieval.statutes.map((s) => s.vector_score))
+    : 0;
+  const best_corpus_similarity = Math.max(bestOpVec, bestStVec);
+  const is_weak_corpus = best_corpus_similarity < WEAK_CORPUS_FLOOR;
+
   // Step 2: optionally augment with live SERP via Bright Data
   let live: LiveLegalSource[] = [];
   let web_data_provider: string | undefined;
@@ -319,14 +345,48 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
   // Step 3: build context
   const { block, citations } = buildContextBlock(retrieval.opinions, retrieval.statutes, live, graphRelated);
 
+  // HARD ABSTAIN — no citations AT ALL (corpus came back empty AND live web
+  // gave us nothing). Return the no-source message without burning a Groq
+  // call. This was the only abstain check before; we keep it as the
+  // catastrophic case.
   if (citations.length === 0) {
     return {
       question,
-      answer: "The Lex.NY corpus doesn't have sources matching that question yet. Try a more specific NY legal topic, or check back after the corpus grows.",
+      answer:
+        "The Lex.NY corpus doesn't have sources matching that question yet. " +
+        "Try a more specific NY legal topic, or check back after the corpus grows.",
       citations: [],
       retrieval_duration_ms: retrieval.durationMs,
       llm_duration_ms: 0,
       total_duration_ms: Date.now() - start,
+      best_corpus_similarity,
+      weak_corpus: is_weak_corpus,
+      disclaimer: STANDARD_DISCLAIMER,
+    };
+  }
+
+  // SOFT ABSTAIN — corpus retrieval was weak AND we don't have live web to
+  // backstop. The model would otherwise bluster on whatever pgvector pulled
+  // off the back of the index. Refuse to call the LLM and explain.
+  if (is_weak_corpus && live.length === 0) {
+    const sim = best_corpus_similarity.toFixed(2);
+    return {
+      question,
+      answer:
+        `The Lex.NY corpus doesn't have strong matches for this question ` +
+        `(best similarity: **${sim}** out of 1.0, below the ${WEAK_CORPUS_FLOOR} confidence floor). ` +
+        `\n\nLex.NY covers New York case law and statutes. Try rephrasing your question ` +
+        `with NY legal terms (for example: *"what is the standard for summary judgment ` +
+        `on a negligence claim under NY law"* or *"does CPLR 3211 apply to motions to ` +
+        `dismiss for failure to state a cause of action"*). ` +
+        `\n\nFor questions outside NY law, or for binding advice on your specific situation, ` +
+        `consult a qualified attorney.`,
+      citations: [],
+      retrieval_duration_ms: retrieval.durationMs,
+      llm_duration_ms: 0,
+      total_duration_ms: Date.now() - start,
+      best_corpus_similarity,
+      weak_corpus: true,
       disclaimer: STANDARD_DISCLAIMER,
     };
   }
@@ -438,6 +498,8 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
       remembered,
       session_id: opts.session_id,
     } : undefined,
+    best_corpus_similarity,
+    weak_corpus: is_weak_corpus,
     disclaimer: STANDARD_DISCLAIMER,
   };
 }
@@ -479,6 +541,19 @@ export async function* answerStream(
   try {
     // Step 1: retrieve from static corpus
     const retrieval = await retrieve(question, { limit: 10 });
+
+    // Step 1.5: same similarity-floor logic as answer() — compute the best
+    // raw vector match and decide whether the retrieval is too weak to bother
+    // calling the LLM.
+    const WEAK_CORPUS_FLOOR = 0.55;
+    const bestOpVec = retrieval.opinions.length
+      ? Math.max(...retrieval.opinions.map((o) => o.vector_score))
+      : 0;
+    const bestStVec = retrieval.statutes.length
+      ? Math.max(...retrieval.statutes.map((s) => s.vector_score))
+      : 0;
+    const best_corpus_similarity = Math.max(bestOpVec, bestStVec);
+    const is_weak_corpus = best_corpus_similarity < WEAK_CORPUS_FLOOR;
 
     // Step 2: optional Bright Data live SERP + Web Unlocker (default on)
     let live: LiveLegalSource[] = [];
@@ -523,6 +598,24 @@ export async function* answerStream(
         text:
           "The Lex.NY corpus doesn't have sources matching that question yet. " +
           "Try a more specific NY legal topic, or check back after the corpus grows.",
+      };
+      yield { type: "done", llm_ms: 0, total_ms: Date.now() - start };
+      return;
+    }
+
+    // Soft abstain in the stream — weak corpus + no live web to backstop.
+    // Stream a short explanation as a delta and close out without calling Groq.
+    if (is_weak_corpus && live.length === 0) {
+      const sim = best_corpus_similarity.toFixed(2);
+      yield {
+        type: "delta",
+        text:
+          `The Lex.NY corpus doesn't have strong matches for this question ` +
+          `(best similarity: **${sim}** out of 1.0, below the ${WEAK_CORPUS_FLOOR} confidence floor). ` +
+          `\n\nLex.NY covers New York case law and statutes. Try rephrasing with NY ` +
+          `legal terms — e.g. *"what is the standard for summary judgment on a negligence ` +
+          `claim under NY law"* — or consult a qualified NY attorney for binding advice ` +
+          `on a specific situation.`,
       };
       yield { type: "done", llm_ms: 0, total_ms: Date.now() - start };
       return;

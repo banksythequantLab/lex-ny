@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="paperGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7f3e9"/>
+      <stop offset="100%" stop-color="#ebe5d3"/>
+    </linearGradient>
+    <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.8" fill="#8a7d5c" opacity="0.18"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#paperGradient)"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <rect x="0" y="0" width="1200" height="6" fill="#8a1538"/>
+
+  <g transform="translate(64, 68)">
+    <circle cx="22" cy="22" r="22" fill="#8a1538"/>
+    <text x="22" y="32" font-family="Georgia, 'Times New Roman', serif"
+          font-size="28" font-weight="700" fill="#f7f3e9"
+          text-anchor="middle">&#167;</text>
+    <text x="60" y="32" font-family="Georgia, 'Times New Roman', serif"
+          font-size="32" font-weight="700" fill="#1a1a1a"
+          letter-spacing="-1">Lex.NY</text>
+  </g>
+
+  <text x="1136" y="100" font-family="'Courier New', monospace"
+        font-size="14" font-weight="500" fill="#4a4a4a"
+        text-anchor="end" letter-spacing="2">
+    NY LEGAL RESEARCH  &#183;  CITATION-ANCHORED
+  </text>
+
+  <g transform="translate(64, 200)">
+    <text font-family="Georgia, 'Times New Roman', serif"
+          font-size="72" font-weight="700" fill="#1a1a1a"
+          letter-spacing="-2">
+      <tspan x="0" y="0">Every case. Every statute.</tspan>
+      <tspan x="0" y="84">Every cite verifiable.</tspan>
+    </text>
+  </g>
+
+  <g transform="translate(64, 414)" font-family="Georgia, 'Times New Roman', serif">
+    <g>
+      <text x="0" y="0" font-size="48" font-weight="700" fill="#8a1538" letter-spacing="-1">5.5M</text>
+      <text x="0" y="28" font-family="'Courier New', monospace"
+            font-size="12" font-weight="500" fill="#4a4a4a" letter-spacing="1.5">LEGAL RECORDS</text>
+    </g>
+    <line x1="200" y1="-32" x2="200" y2="32" stroke="#1a1a1a" stroke-width="1" opacity="0.3"/>
+    <g transform="translate(232, 0)">
+      <text x="0" y="0" font-size="48" font-weight="700" fill="#8a1538" letter-spacing="-1">6.95M</text>
+      <text x="0" y="28" font-family="'Courier New', monospace"
+            font-size="12" font-weight="500" fill="#4a4a4a" letter-spacing="1.5">GRAPH EDGES</text>
+    </g>
+    <line x1="468" y1="-32" x2="468" y2="32" stroke="#1a1a1a" stroke-width="1" opacity="0.3"/>
+    <g transform="translate(500, 0)">
+      <text x="0" y="0" font-size="48" font-weight="700" fill="#8a1538" letter-spacing="-1">1714</text>
+      <text x="0" y="28" font-family="'Courier New', monospace"
+            font-size="12" font-weight="500" fill="#4a4a4a" letter-spacing="1.5">EARLIEST OPINION</text>
+    </g>
+    <line x1="690" y1="-32" x2="690" y2="32" stroke="#1a1a1a" stroke-width="1" opacity="0.3"/>
+    <g transform="translate(722, 0)">
+      <text x="0" y="0" font-size="48" font-weight="700" fill="#8a1538" letter-spacing="-1">2026</text>
+      <text x="0" y="28" font-family="'Courier New', monospace"
+            font-size="12" font-weight="500" fill="#4a4a4a" letter-spacing="1.5">LATEST OPINION</text>
+    </g>
+  </g>
+
+  <g transform="translate(64, 552)">
+    <text font-family="Georgia, 'Times New Roman', serif" font-size="20" fill="#1a1a1a">
+      Built so it can&#8217;t hallucinate.
+    </text>
+    <text x="0" y="32" font-family="'Courier New', monospace"
+          font-size="13" font-weight="500" fill="#4a4a4a" letter-spacing="1.5">
+      OPEN SOURCE  &#183;  APACHE-2.0  &#183;  IAM.NOTA.LAWYER
+    </text>
+  </g>
+
+  <text x="1136" y="584" font-family="'Courier New', monospace"
+        font-size="14" font-weight="500" fill="#8a1538"
+        text-anchor="end" letter-spacing="1">
+    github.com/banksythequantLab/lex-ny
+  </text>
+</svg>

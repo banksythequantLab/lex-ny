@@ -2,10 +2,70 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 
+const SITE_URL = "https://iam.nota.lawyer";
+const SITE_TITLE = "Lex.NY — New York legal research, citation-anchored";
+const SITE_DESCRIPTION =
+  "A research engine for New York law. 5.5 million records, a 6.95 million-edge citation graph, every claim tied to a real source. Supervised by a NY-licensed attorney. Not legal advice.";
+
 export const metadata: Metadata = {
-  title: "Lex.NY — New York legal research, citation-anchored",
-  description:
-    "Lex.NY is a research engine for New York law. 5.5 million records, a 6.9 million-edge citation graph, every claim tied to a real source. Supervised by a NY-licensed attorney. Not legal advice.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: "%s · Lex.NY",
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "New York law",
+    "legal research",
+    "citation graph",
+    "GraphRAG",
+    "NY case law",
+    "NY statutes",
+    "Court of Appeals",
+    "CPLR",
+    "Penal Law",
+    "open source legal tech",
+  ],
+  authors: [{ name: "Derek Soltis", url: "https://nota.lawyer" }],
+  creator: "Derek Soltis (SDNY/EDNY)",
+  publisher: "Lex.NY",
+  alternates: {
+    canonical: SITE_URL,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: SITE_URL,
+    siteName: "Lex.NY",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "Lex.NY — Every case. Every statute. Every cite verifiable. 5.5M records, 6.95M graph edges, 1714 to 2026.",
+        type: "image/svg+xml",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/og-image.svg"],
+    creator: "@BanksyAI",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

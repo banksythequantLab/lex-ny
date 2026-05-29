@@ -1,0 +1,12 @@
+# Lex.NY robots.txt
+# https://iam.nota.lawyer
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+
+# Crawl-rate hint for aggressive bots
+Crawl-delay: 1
+
+Sitemap: https://iam.nota.lawyer/sitemap.xml
