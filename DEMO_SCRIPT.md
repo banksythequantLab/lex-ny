@@ -1,163 +1,207 @@
-# Lex.NY — Demo Video Script
+# Lex.NY — Demo Script
 
-Three cuts for three audiences. **Record them once, edit down to the right length.**
+Three cuts. Pick the one that fits the submission format. Every number called out is **live** at the moment of recording — open a second tab on `/stats` so the audience sees you didn't fake anything.
 
-All numbers in this script are live-verified against `/api/corpus-stats` and `/api/graph-stats` as of May 28, 2026. Don't round down. Don't soften.
-
----
-
-## CUT 1 — 90 seconds — Bright Data UNLOCKED submission (lablab.ai)
-
-**Tone:** Technical depth, attorney credibility, "shows the BD stack working in real time."
-
-### Setup
-- Screen: split — left half is the Lex.NY app at `/ask`, right half is `/api/bright-data-stats` in a terminal tab.
-- Have the **Penal Law 400.00 firearms** question pre-typed in the textarea (don't waste seconds typing on camera).
-- Have a third tab ready on `/stats` showing the dashboard counters.
-
-### Script
-
-> **(0:00)** "I'm Derek Soltis, a New York attorney. This is Lex.NY — a research engine where every answer is anchored to real NY law, with Bright Data pulling the receipts in real time."
-
-> **(0:08)** "Here's the killer problem with legal AI: it makes things up. Invented case names. Phantom section numbers. As an attorney supervising a tool like this, that's a non-starter under New York Rule of Professional Conduct 7.1."
-
-> **(0:20)** "So we built Lex.NY to make hallucination physically impossible. Watch."
-
-> **(0:24)** *Click "Ask Lex.NY". The Penal 400.00 question fires.*
-
-> **(0:28)** *Point at the right pane where `/api/bright-data-stats` shows the counter incrementing.* "Right now, Bright Data is firing three calls. One SERP query to Google constrained to NY legal sources. Two Web Unlocker calls pulling full statute text from nysenate.gov in parallel."
-
-> **(0:42)** *The answer renders.* "Every claim has a citation marker. The model is required to anchor every sentence to either an indexed source or a Bright Data-sourced URL — or admit it can't answer. No middle ground."
-
-> **(0:55)** *Cut to `/stats` page.* "Behind that answer: one-point-three-two million NY case decisions, four-point-one-eight million docket records, all forty thousand statute sections. Five-point-five million legal records, queryable live. Bright Data is the layer that keeps it grounded in the present-day web."
-
-> **(1:15)** *Back to the answer panel.* "Three Bright Data requests. Four hundred kilobytes of fresh legal text. Five seconds end-to-end. The Web Unlocker zone handles bot detection, CAPTCHAs, JavaScript pages — nysenate.gov, Justia, AmLegal, all reliable."
-
-> **(1:25)** "Built by a NY attorney, supervised by a NY attorney, grounded in Bright Data on every request. Lex.NY — every cite verifiable."
-
-> **(1:30)** *End card with GitHub URL (`github.com/banksythequantLab/lex-ny`) and the live tunnel URL.*
-
-### B-roll if needed
-- Scroll through `/api/bright-data-stats` showing the recent_requests log
-- Zoom in on a citation card showing the source URL → click → nysenate.gov opens
-- Quick pan across the `/stats` hero counters
+**Public URL:** `https://iam.nota.lawyer`
+**Repo:** `https://github.com/banksythequantLab/lex-ny`
 
 ---
 
-## CUT 2 — 3 minutes — HackerNoon Proof of Usefulness (proofofusefulness.com + HackerNoon article hero clip)
+## Setup before hitting Record (60 seconds)
 
-**Tone:** Real product, real corpus, real use case. Lean on the scale story — the corpus is the moat.
+1. **Confirm everything is green:**
+   ```powershell
+   python E:\nota_lawyer_hackathon\nota-build\smoke_demo.py
+   ```
+   Wait for `18/18 passed`. If anything fails, fix before recording.
 
-### Setup
-- Same split screen, plus a third pane: `/stats` open in a separate tab so you can switch to it on cue.
+2. **Open these tabs in order so they're cached:**
+   - Tab 1: `https://iam.nota.lawyer/` (home)
+   - Tab 2: `https://iam.nota.lawyer/stats` (live dashboard — your money shot)
+   - Tab 3: `https://iam.nota.lawyer/ask` (streaming Q&A)
+   - Tab 4: `https://iam.nota.lawyer/search`
+   - Tab 5: `https://iam.nota.lawyer/cited-by/5688657` (Bleakley — graph traversal)
+   - Tab 6: `https://github.com/banksythequantLab/lex-ny` (proof of code)
 
-### Script
+3. **Clear browser cache and zoom to 110%** so text is legible on recording playback.
 
-> **(0:00) — Hook**
-> "I get the same question from clients every week. 'Hey Derek, what does New York law actually say about X?' And every time I have to bill them three hundred dollars to find out. So I built the tool I wished existed."
+4. **Run a warm-up `/api/ask` query** (e.g. "What is CPLR 3211?") so the corpus is in the OS page cache. Cold queries take 30s+, warm queries take 7s.
 
-> **(0:20) — The problem**
-> "Legal AI either invents law — which gets you disciplined — or it's so limited it only answers trivia. There's no production-grade middle ground for jurisdiction-specific research."
-
-> **(0:40) — Show the corpus**
-> *Cut to `/stats` page. Counters animate up.*
-> "Lex.NY runs against the real NY legal record. One-point-three-two million case decisions, going back to seventeen-fourteen. Four-point-one-eight million docket records — every NY case ever filed in the federal districts and appellate courts. All forty thousand statute sections. Five-point-five million legal records, end to end."
-
-> **(1:00) — Show the citation graph**
-> *Cut to the `Knowledge graph` panel on `/stats`.*
-> "Underneath it: a Neo4j AuraDB citation graph. One-point-three-six million nodes. Six-point-three million relationships. Four-point-nine million opinion-to-opinion citations — meaning Lex.NY doesn't just know what cases exist, it knows which ones cite each other."
-
-> **(1:15) — Demo: question 1 (Bright Data live web)**
-> *Switch to `/ask`. Type:* "What does General Business Law 349 prohibit?"
-> "Consumer protection law. Watch the Bright Data counter tick on the right."
-> *Answer renders.* "Fifteen citations. Ten from the indexed corpus, five fetched live through Bright Data Web Unlocker pointing to nysenate.gov and Justia. Eleven seconds end-to-end."
-
-> **(1:40) — Demo: question 2 (GraphRAG)**
-> *Switch to `/search`. Type:* "summary judgment standard in negligence cases"
-> "Now I'm asking for the *case law*, not the statute. This is where the citation graph earns its keep."
-> *Results appear, ranked by similarity AND `cited_by_count`.*
-> "Top result: Winegrad versus NYU Medical Center, nineteen-eighty-five, two thousand nine hundred fifty-one citations in the graph. That's the canonical NY summary judgment case. Lex.NY surfaced it not because the words matched, but because the graph knows that's the case everyone cites."
-
-> **(2:05) — Demo: top-cited query (live Cypher)**
-> *Show `/api/graph-stats` JSON response with `top_cited_opinions`.*
-> "Real Cypher query against the live graph. People v. Bleakley — eleven thousand cites. People v. Contes — ten thousand eight hundred. People v. Danielson. These are the actual most-cited NY appellate decisions. Not handpicked. Not memorized. The graph computed it."
-
-> **(2:25) — The sponsor stack, briefly**
-> "Six sponsors, end-to-end. Bright Data on every request. Neo4j for the graph. Algolia for forty-thousand-record federated search in sixty milliseconds. Speechmatics for voice input — there's a mic button on the ask page. Storyblok runs the editorial blog. Triggerware watches federal bills."
-
-> **(2:45) — Closing**
-> "Lex.NY is open source. The pipeline scripts that built the corpus from CourtListener's bulk dumps are in the repo. It's a real tool, supervised by a real attorney, with a real corpus underneath. Five-point-five million legal records. Every cite verifiable. Find us at lex.nota.lawyer."
-
-> **(3:00)** *End card with repo URL, proofofusefulness.com submission tag, HackerNoon article URL.*
+5. **Quiet the box** — pause the F extract if it's running (it's pegging Postgres). To pause and resume cleanly: stop the extract process, restart it after recording (it's resume-safe).
+   ```powershell
+   # If you need maximum responsiveness for the demo:
+   Get-Process python | Where-Object { $_.WorkingSet64 -gt 200MB } | Stop-Process
+   ```
 
 ---
 
-## CUT 3 — 30 seconds — Social hook for Twitter/LinkedIn
+## CUT 1 — The 90-second sponsor reel (for lablab.ai submission)
 
-**Tone:** Punchy. Designed to drive clicks to the long video.
+> Aim for crisp pacing, no dead air. Have these numbers memorized so you don't have to read.
 
-### Script
+### Beat 1 — The problem (0:00–0:15)
 
-> "I'm a New York attorney. Every legal AI hallucinates. So I built one that *physically can't*."
-> *2-second clip of the GBS 349 answer rendering with citations highlighted.*
-> "One-point-three-two million NY cases. Four-point-nine million citation edges. Six sponsors live. Bright Data fetches the receipts. Neo4j maps the graph. Every answer has the source."
-> *3-second clip of `/stats` counters animating up.*
-> "Lex.NY. Every cite verifiable. Link below."
+**On camera, opening shot of you at the desk:**
 
-### Visuals
-- Bold text overlay at the punch line: "Every cite verifiable."
-- End card with Bright Data + HackerNoon + Neo4j + Algolia + Speechmatics + Storyblok + Triggerware logos in a single row
+> "I'm a New York attorney. Last month I asked a major commercial AI a real legal question — and it cited a case that doesn't exist. Under New York Rule of Professional Conduct 7.1, I can't ship that to clients. So I built one that physically can't hallucinate."
+
+**Cut to screen, tab on `/`:**
+
+> "This is Lex.NY."
+
+### Beat 2 — The corpus (0:15–0:35)
+
+**Switch to `/stats` tab. Slow scroll while narrating.**
+
+> "Five and a half million NY legal records — every appellate opinion since 1714, every section of the Consolidated Laws, every federal NY decision. Nineteen-thousand seven hundred sixty courts."
+
+**Pause on the counter (it ticks live):**
+
+> "Six point three million relationships in the Neo4j citation graph. Every NY-to-NY citation between opinions is an edge. This is how I find leading precedent."
+
+### Beat 3 — The ask (0:35–1:00)
+
+**Switch to `/ask` tab. Type slowly:**
+
+> "What does General Business Law section 349 prohibit?"
+
+**Hit Enter. Narrate while it runs:**
+
+> "Watch what happens. First — Bright Data fires three live web requests to nysenate.gov and law.justia.com — see the citation count tick up in the corner. Then pgvector hits the corpus. Then Neo4j expands the citation graph. Then Groq streams the answer in real time, with every claim tied to a numbered source."
+
+**When the citation strip appears (~11s in), point at it:**
+
+> "Twenty-five citations. Ten from indexed opinions, ten from statutes, five from live Bright Data. The model literally can't say a sentence the retrieval layer can't prove."
+
+### Beat 4 — The graph (1:00–1:20)
+
+**Switch to `/cited-by/5688657` tab — Bleakley page already loaded.**
+
+> "This is People v. Bleakley — the canonical NY weight-of-evidence case. It's been cited eleven thousand fifty-four times. Westlaw and Lexis sell that count as a premium feature. Mine renders it as a free Cypher query."
+
+**Click the top citer — People v. Danielson.**
+
+> "Click any citer, traverse the graph. Real GraphRAG, not vector tricks."
+
+### Beat 5 — Close (1:20–1:30)
+
+**Back to camera.**
+
+> "Every case. Every statute. Every cite verifiable. Open source. Apache 2.0. github.com/banksythequantLab/lex-ny."
 
 ---
 
-## Specific numbers to lock in before recording
+## CUT 2 — The 3-minute deep dive (for HackerNoon Proof of Usefulness)
 
-These are live as of the script being written. **Refresh `/api/corpus-stats` right before recording and update if anything moved.**
+Use this when you have time to actually show how the architecture works.
 
-| Claim in the script | Value | Live source |
-|---|---:|---|
-| Total legal records | 5,540,563 | `/api/corpus-stats` `postgres.total_legal_records` |
-| Case decisions | 1,322,766 | `postgres.opinions` |
-| Docket records | 4,177,369 | `postgres.ny_cases` |
-| Statute sections | 40,428 | `postgres.statutes` |
-| Citation edges (Postgres) | 4,940,299 | `postgres.opinion_citations` |
-| Date coverage | 1714 → 2026 | `postgres.decision_date_range` |
-| Graph nodes | 1,363,359 | `neo4j.stats.total_nodes` |
-| Graph relationships | 6,303,493 | `neo4j.stats.total_relationships` |
-| People v. Bleakley cites | 11,064 | `neo4j.stats.top_cited_opinions[0]` |
-| People v. Contes cites | 10,824 | `top_cited_opinions[1]` |
-| Algolia statute index | 40,427 | `/api/algolia-stats` `stats.total_records` |
-| Algolia search ms | <100 | `stats.last_search_ms` |
+### Beat 1 — Hook (0:00–0:20)
+
+Same as Cut 1.
+
+### Beat 2 — Corpus build (0:20–0:50)
+
+**On `/stats`:**
+
+> "Five and a half million records. CourtListener publishes their bulk dumps monthly — fifty gigabytes of opinions, four gigs of dockets, half a gig of citation maps. I wrote streaming Python that filters down to NY courts, ingests into local Postgres, and embeds every opinion with `mxbai-embed-large` on a single RTX 3090."
+
+**Point at the date range:**
+
+> "1714 to 2026. The oldest opinion in the corpus is from the New York Supreme Court of Judicature, eighteen years before the United States existed."
+
+### Beat 3 — The pipeline (0:50–1:30)
+
+**Switch to `/ask`. Type a question that needs graph context:**
+
+> "What's the standard for summary judgment on a negligence claim under New York law?"
+
+**While it runs, talk through the pipeline:**
+
+> "Five steps. One — embed the question. Two — pgvector ANN search across one point three million opinion embeddings and forty thousand statute sections. Three — Neo4j graph traversal, pulling the citing/cited neighborhood. Four — Bright Data Web Unlocker hits nysenate.gov and CourtListener for live current text. Five — Groq's Llama 3.3 70B drafts the answer under a strict-citation system prompt that forbids it from inventing names."
+
+**Citation strip lands (~11s):**
+
+> "Twenty-five citations. Eight to ten seconds end-to-end. Notice — `graph=neo4j`. That means the GraphRAG expansion fired and pulled in cases the pure vector search would have missed. Like Winegrad — the 1985 Court of Appeals decision that's the canonical statement of the summary-judgment standard."
+
+### Beat 4 — Why the graph matters (1:30–2:10)
+
+**Switch to `/cited-by/5688657`.**
+
+> "Vector search finds cases that sound similar. The graph finds cases that *matter*. This is People v. Bleakley — eleven thousand citing opinions. The top citer is People v. Danielson — nine thousand two hundred ninety-four cites. Then Romero — four thousand sixty-one. Mateo — two thousand seven hundred sixty-three."
+
+**Click Danielson.**
+
+> "These are the cases an experienced NY litigator would put at the top of any brief on weight-of-evidence appellate review. The graph computed it from four point nine million citation edges. No human curation."
+
+### Beat 5 — Sponsor integration (2:10–2:40)
+
+**Back to `/stats`.**
+
+> "Six sponsor integrations, all live. Bright Data on every ask call. Neo4j AuraDB for the graph. Algolia for sub-100ms federated statute search across forty thousand sections. Storyblok for the editorial blog. Speechmatics for voice input on the ask page. Triggerware watching federal bills for legislative changes."
+
+**Switch to `/ask` and tap the mic button briefly:**
+
+> "Voice in. Cited answer out."
+
+### Beat 6 — Close (2:40–3:00)
+
+> "Lex.NY. Built by a New York attorney in one month on a single workstation. Five point five million records. Apache 2.0. The code is at github.com/banksythequantLab/lex-ny. The full writeup is on HackerNoon. Every case, every statute, every cite verifiable."
 
 ---
 
-## Recording checklist
+## CUT 3 — The 30-second hot version (for X/LinkedIn)
 
-- [ ] **Clean desktop background** — dark, no clutter
-- [ ] **Browser zoom 110-125%** so text is readable on mobile
-- [ ] **Hide bookmarks bar** during the recording
-- [ ] **Refresh `/api/corpus-stats`** and update any number in the script that moved
-- [ ] **Mic test** — record 10 sec, listen back, fix levels
-- [ ] **Lighting** — face the window, soft front light
-- [ ] **OBS scenes pre-built:**
-  - Scene 1: Full-screen Lex.NY at `/ask`
-  - Scene 2: Split (Lex.NY `/ask` + BD stats terminal)
-  - Scene 3: Full-screen `/stats` for the corpus reveal
-  - Scene 4: `/search` for the semantic case demo
-  - Scene 5: End card
-- [ ] **Demo questions queued** in a text file — paste, don't type live
-- [ ] **Take 3 attempts** per cut, pick the best, edit in DaVinci Resolve or CapCut
+> Single take, no cuts. Memorize this.
 
-## Length targets
+**Open on `/stats`. Slow zoom on the counter.**
 
-| Cut | Target | Use |
-|---|---|---|
-| 1 | 90 sec | lablab.ai submission upload |
-| 2 | 3 min | HackerNoon article embed + proofofusefulness.com |
-| 3 | 30 sec | Twitter/LinkedIn launch post |
+> "I'm a NY attorney. I built a legal AI that physically can't hallucinate. Five point five million records. Six point three million citation edges. Every claim tied to a real, retrievable source. Open source. Lex dot N Y."
 
-## Upload destinations
+**Cut to `/ask` mid-stream:**
 
-- **YouTube unlisted** for the 90 sec and 3 min versions
-- **Twitter native** for the 30 sec (better algo treatment than YouTube embed)
-- **HackerNoon article** embeds the 3 min via the YouTube URL
+> "Watch the citations land before the text. That's the moat."
+
+**Cut to `/cited-by/5688657`:**
+
+> "And the graph traversal is a free Cypher query, not a paid Westlaw subscription."
+
+**Black card with text:** `github.com/banksythequantLab/lex-ny`
+
+---
+
+## Live numbers cheat sheet
+
+Memorize the round numbers. Open `/stats` in a side window during recording so you can verify-as-you-talk.
+
+| What to say | Why |
+|---|---|
+| **Five and a half million records** | Total in corpus |
+| **One point three million opinions** | NY appellate + federal NY |
+| **Forty thousand statute sections** | All 137 NY Consolidated Laws |
+| **Four point nine million citation edges** | Opinion-to-opinion CITES |
+| **Six point three million graph relationships** | Neo4j total |
+| **1714 to 2026** | Date span |
+| **Eleven thousand citing opinions** | Bleakley's inbound count |
+| **Seven seconds, warm** | `/api/ask` p50 latency once OS cache settles |
+| **Twenty-five citations per answer** | 10 opinions + 10 statutes + 5 live web |
+
+## If F extract has completed at recording time
+
+**Add this beat to whichever cut you're using:**
+
+> "And the citation graph isn't just opinion-to-opinion. Every opinion that applies a New York statute is also linked in the graph — five hundred eighty-three thousand `APPLIES` edges so far, growing to roughly six hundred thousand. Click any statute on the stats page, see every case that ever applied it."
+
+(Update the number to whatever `/api/graph-stats` shows at recording time.)
+
+## Watch for
+
+- **`/api/ask` timeouts:** if you see >20s spinner, F extract is hogging Postgres. Pause it (`Stop-Process`) before continuing.
+- **Stream stuttering:** the SSE endpoint expects a stable connection. If your wifi flakes, use Ethernet for the recording.
+- **Stats showing zero:** that means a sponsor health check is failing. Check `/api/algolia-stats` etc. individually. Re-run smoke_demo.py.
+- **Citation strip empty:** retrieval returned no hits. Use a more common NY legal question — "What is CPLR 3211?", "What does Labor Law 240 cover?", "Summary judgment standard in negligence".
+
+## Closing one-liners (pick one based on platform)
+
+- **Hackathon submission:** "Built for Bright Data UNLOCKED and HackerNoon Proof of Usefulness. Live now at iam.nota.lawyer."
+- **LinkedIn:** "If your AI cites cases that don't exist, you don't have a research tool. You have a liability."
+- **X:** "Every case. Every statute. Every cite verifiable. github.com/banksythequantLab/lex-ny"
