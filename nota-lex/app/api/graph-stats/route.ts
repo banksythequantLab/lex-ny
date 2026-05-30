@@ -3,6 +3,12 @@ import { getGraphStats, isNeo4jConfigured, neo4jHealthCheck } from "@nota-lawyer
 
 export const runtime = "nodejs";
 
+// In-memory cache. Same pattern as /api/corpus-stats - the graph counts
+// only change when the ingest pipeline runs, so caching for 60s is safe
+// and stops /stats from looking blank during the cold Neo4j round trip.
+const CACHE_TTL_MS = 60_000;
+let _cache: { at: number; data: unknown } | null = null;
+
 /**
  * Neo4j citation graph stats - proof of HackerNoon sponsor integration.
  *
@@ -15,6 +21,17 @@ export const runtime = "nodejs";
  *   - Top applied statutes (most frequently litigated NY laws)
  */
 export async function GET() {
+  if (_cache && Date.now() - _cache.at < CACHE_TTL_MS) {
+    const age = Math.floor((Date.now() - _cache.at) / 1000);
+    return NextResponse.json(_cache.data, {
+      headers: {
+        "X-Cache": "HIT",
+        "X-Cache-Age-Seconds": String(age),
+        "Cache-Control": `public, max-age=${Math.max(1, 60 - age)}`,
+      },
+    });
+  }
+
   if (!isNeo4jConfigured()) {
     return NextResponse.json({
       integration: "Neo4j AuraDB citation graph",
@@ -36,7 +53,7 @@ export async function GET() {
     }
 
     const stats = await getGraphStats();
-    return NextResponse.json({
+    const payload = {
       integration: "Neo4j AuraDB citation graph",
       health: health.details,
       stats,
@@ -48,6 +65,10 @@ export async function GET() {
         graphrag_endpoint:
           "POST /api/ask?graphrag=true to enable graph-augmented retrieval",
       },
+    };
+    _cache = { at: Date.now(), data: payload };
+    return NextResponse.json(payload, {
+      headers: { "X-Cache": "MISS", "Cache-Control": "public, max-age=60" },
     });
   } catch (e) {
     return NextResponse.json(

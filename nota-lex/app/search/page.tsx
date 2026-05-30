@@ -53,13 +53,16 @@ export default function SearchPage() {
   const [res, setRes] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function search(e?: React.FormEvent) {
-    e?.preventDefault();
-    if (!q.trim()) return;
+  // doSearch() runs the actual API call. It takes the query as a parameter
+  // so chip-click handlers can pass the chip text directly without waiting
+  // for setQ() state to propagate. search() is the form-submit wrapper.
+  async function doSearch(queryStr: string) {
+    const queryToUse = queryStr.trim();
+    if (!queryToUse) return;
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ q, limit: "20" });
+      const params = new URLSearchParams({ q: queryToUse, limit: "20" });
       if (minCites > 0) params.set("min_cites", String(minCites));
       const r = await fetch("/api/search/cases?" + params.toString());
       const d = await r.json();
@@ -70,6 +73,11 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function search(e?: React.FormEvent) {
+    e?.preventDefault();
+    await doSearch(q);
   }
 
   return (
@@ -92,6 +100,7 @@ export default function SearchPage() {
           <ul className="flex flex-wrap gap-3 md:gap-7 items-center text-xs md:text-sm text-[var(--color-ink-2)] list-none">
             <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
             <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
+            <li><Link href="/web-search" className="hover:text-[var(--color-ink)]">Web</Link></li>
             <li><Link href="/corpus" className="hover:text-[var(--color-ink)]">Corpus</Link></li>
             <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
           </ul>
@@ -133,7 +142,7 @@ export default function SearchPage() {
             <button
               key={s}
               type="button"
-              onClick={() => { setQ(s); }}
+              onClick={() => { setQ(s); doSearch(s); }}
               className="px-3 py-1.5 border border-[var(--color-rule)]/30 rounded-full hover:border-[var(--color-seal-deep)] text-[var(--color-ink-2)]"
             >
               {s}
