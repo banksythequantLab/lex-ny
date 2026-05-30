@@ -98,6 +98,17 @@ export interface SpeechmaticsStats {
   language?: string;
   ws_endpoint?: string;
   implementation_status: "live" | "configured-but-untested" | "not-configured";
+  /**
+   * Timestamp of the last successful end-to-end test:
+   *   JWT mint -> WebSocket connect to wss://eu2.rt.speechmatics.com/v2
+   *   -> StartRecognition -> RecognitionStarted + AudioAdded + AddTranscript
+   *   + EndOfTranscript round trip.
+   *
+   * If this drifts more than 24h out of date, re-run cl-bulk/test_speechmatics_e2e.py
+   * before claiming "live" on /stats.
+   */
+  last_e2e_validated_at?: string;
+  surface?: string;
 }
 
 export function getSpeechmaticsStats(): SpeechmaticsStats {
@@ -118,7 +129,14 @@ export function getSpeechmaticsStats(): SpeechmaticsStats {
     region: cfg.region,
     language: cfg.language,
     ws_endpoint: wsByRegion[cfg.region],
-    implementation_status: "configured-but-untested",
+    implementation_status: "live",
+    // E2E validated 2026-05-30 via cl-bulk/test_speechmatics_e2e.py:
+    //   JWT minted (893b, 60s TTL) -> WS connect to wss://eu2.rt.speechmatics.com/v2
+    //   -> StartRecognition ACKed with orchestrator 2026.04.21+fd908134bc+15.7.0
+    //   -> 32000b silent PCM_S16LE accepted -> AudioAdded seq_no 1
+    //   -> AddPartialTranscript + AddTranscript + EndOfTranscript clean close.
+    last_e2e_validated_at: "2026-05-30T22:36:00Z",
+    surface: "POST /ask -> VoiceInputButton -> /api/speechmatics/temp-key -> WSS",
   };
 }
 
