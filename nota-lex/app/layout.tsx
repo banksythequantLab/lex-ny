@@ -127,8 +127,13 @@ function Footer() {
             relationship. For binding advice on a specific situation, engage a
             qualified NY attorney.
           </p>
-          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase mb-3">
             NY RPC 7.1 · Supervised
+          </p>
+          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+            <Link href="/terms" className="hover:text-[var(--color-ink)] underline underline-offset-2">Terms</Link>
+            {" · "}
+            <Link href="/privacy" className="hover:text-[var(--color-ink)] underline underline-offset-2">Privacy</Link>
           </p>
         </div>
       </div>

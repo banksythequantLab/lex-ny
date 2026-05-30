@@ -48,6 +48,8 @@ check("/", lambda: page_loads("/", "Lex.NY"))
 check("/ask", lambda: page_loads("/ask", "Ask"))
 check("/stats", lambda: page_loads("/stats", "Every number here is live"))
 check("/search", lambda: page_loads("/search", "Find the case"))
+check("/terms", lambda: page_loads("/terms", "Terms of Use"))
+check("/privacy", lambda: page_loads("/privacy", "Privacy notice"))
 
 # 2. Sponsor stats APIs all return 200
 def stats_ok(path):
