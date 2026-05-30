@@ -114,7 +114,6 @@ function Footer() {
             <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
             <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
             <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
-            <li><Link href="/blog" className="hover:text-[var(--color-ink)]">Blog</Link></li>
             <li><Link href="/about" className="hover:text-[var(--color-ink)]">About</Link></li>
           </ul>
         </div>

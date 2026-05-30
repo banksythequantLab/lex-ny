@@ -137,7 +137,7 @@ Same as Cut 1.
 
 **Back to `/stats`.**
 
-> "Six sponsor integrations, all live. Bright Data on every ask call. Neo4j AuraDB for the graph. Algolia for sub-100ms federated statute search across forty thousand sections. Storyblok for the editorial blog. Speechmatics for voice input on the ask page. Triggerware watching federal bills for legislative changes."
+> "Five sponsor integrations, all live. Bright Data on every ask call. Neo4j AuraDB for the graph. Algolia for sub-100ms federated statute search across forty thousand sections. Speechmatics for voice input on the ask page. Triggerware watching federal bills for legislative changes."
 
 **Switch to `/ask` and tap the mic button briefly:**
 

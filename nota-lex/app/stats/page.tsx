@@ -73,7 +73,6 @@ export default function StatsPage() {
       "bright-data-stats",
       "graph-stats",
       "algolia-stats",
-      "storyblok-stats",
       "speechmatics-stats",
       "triggerware-stats",
     ];
@@ -201,7 +200,6 @@ export default function StatsPage() {
           <SponsorCard name="Bright Data" sub="Web Unlocker + SERP" data={sponsors["bright-data-stats"]} />
           <SponsorCard name="Neo4j" sub="GraphRAG citation graph" data={sponsors["graph-stats"]} />
           <SponsorCard name="Algolia" sub="Federated statute search" data={sponsors["algolia-stats"]} />
-          <SponsorCard name="Storyblok" sub="Editorial CMS" data={sponsors["storyblok-stats"]} />
           <SponsorCard name="Speechmatics" sub="Voice input" data={sponsors["speechmatics-stats"]} />
           <SponsorCard name="Triggerware" sub="Legislative watches" data={sponsors["triggerware-stats"]} />
         </div>

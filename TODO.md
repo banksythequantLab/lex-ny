@@ -30,13 +30,9 @@ Everything that needs to happen before, during, and after submissions. Ordered b
 - [ ] Run `install-lex-ny-service.bat` as Admin (1-click UAC; tunnel becomes a Windows service)
 - [ ] Verify service auto-starts: `Restart-Computer; (after reboot) sc query cloudflared-lex-ny`
 
-### 1.3 — Storyblok content
-- [ ] Paste `STORYBLOK_BLOG_POST.md` content into Storyblok web UI as a new `blog_post` Story
-- [ ] Verify `/blog` lists it and `/blog/citation-graph-is-the-moat` renders
-
-### 1.4 — Final smoke + record
-- [ ] Run `smoke_demo.py` → confirm 18/18 (or 19/19 if we add a watches check)
-- [ ] Open all 7 demo tabs (home, ask, search, stats, cited-by/5688657, watches, blog), warm-load them
+### 1.3 — Final smoke + record
+- [ ] Run `smoke_demo.py` → confirm all checks pass
+- [ ] Open all 6 demo tabs (home, ask, search, stats, cited-by/5688657, watches), warm-load them
 - [ ] **Record the 3-minute cut** from `DEMO_SCRIPT.md` (HackerNoon PoU version)
 - [ ] Optionally record the 90-second cut for lablab.ai
 
@@ -50,13 +46,12 @@ Everything that needs to happen before, during, and after submissions. Ordered b
 - [ ] Upload demo video (90s cut)
 - [ ] Repo URL: `github.com/banksythequantLab/lex-ny`
 - [ ] Live URL: `https://iam.nota.lawyer`
-- [ ] **Tech tags**: Bright Data (Web Unlocker + SERP), Neo4j, Algolia, Storyblok, Speechmatics, Triggerware, Groq, Ollama, pgvector, Next.js
+- [ ] **Tech tags**: Bright Data (Web Unlocker + SERP), Neo4j, Algolia, Speechmatics, Triggerware, Groq, Ollama, pgvector, Next.js
 - [ ] **Tier-specific sponsor track submissions** (one form per applicable):
   - [ ] Best Use of Bright Data
   - [ ] Best Use of Neo4j (the GraphRAG story — 6.95M relationships, top-cited Cypher)
   - [ ] Best Use of Algolia (federated 40k-statute search, sub-100ms)
   - [ ] Best Use of Speechmatics (mic on /ask, voice → cited legal answer)
-  - [ ] Best Use of Storyblok (blog at /blog backed by their CMS)
   - [ ] Best Use of Triggerware (/watches page — live SQL deltas on federal bills)
 
 ### 2.2 — HackerNoon Proof of Usefulness (deadline June 5)
@@ -121,15 +116,14 @@ Everything that needs to happen before, during, and after submissions. Ordered b
 | Citation edges (CITES) | 4,940,299 |
 | **APPLIES edges** | **647,979** ✨ new |
 | **Total Neo4j relationships** | **~6,951,000** ✨ updated |
-| Smoke test | 18/18 |
+| Smoke test | 16/16 |
 | Public URL | https://iam.nota.lawyer (live) |
 | GitHub | banksythequantLab/lex-ny (public, 9 commits) |
 | HackerNoon article | drafted (HACKERNOON_ARTICLE.md, 1,838 words) |
-| Storyblok blog | drafted (STORYBLOK_BLOG_POST.md, ready to paste) |
 | Demo script | drafted (DEMO_SCRIPT.md, 3 cuts) |
 
 ---
 
 ## Next action
 
-The single most important thing left to do is **rate limit `/api/ask` and add a disclaimer footer** before publicizing the URL anywhere. That's Tier 1.1 above, and that's what this turn is going to ship.
+Tier 1.1 (safety + disclaimer) and Tier 3 polish (ivfflat lists=1200, similarity-floor abstain, /how-it-works, OG cards) are SHIPPED. The blockers to public submission are now operator-side: record the demo video, submit to lablab.ai (May 31) and proofofusefulness.com (June 5). Next engineering targets are homepage polish and persistent Bright Data + Groq counters.

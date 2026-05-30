@@ -55,7 +55,7 @@ Minimum required values for the Quick Start:
 | `BRIGHT_DATA_API_TOKEN` | https://brightdata.com → MCP page → Zone `mcp_unlocker` |
 | `OLLAMA_EMBED_URL` | Default: `http://localhost:11434` (install [Ollama](https://ollama.com), then `ollama pull mxbai-embed-large`) |
 
-All other env vars (Neo4j, Algolia, Storyblok, Speechmatics, Triggerware) are optional — the app gracefully degrades when they're missing, and `/stats` will tell you which sponsors are dark.
+All other env vars (Neo4j, Algolia, Speechmatics, Triggerware) are optional — the app gracefully degrades when they're missing, and `/stats` will tell you which sponsors are dark.
 
 ### 4. Seed the statute corpus
 
@@ -276,4 +276,4 @@ Lex.NY's reference instance runs on Windows 10/11 with:
 - Neo4j AuraDB enterprise tier
 - Cloudflare tunnel `lex-ny` published to `iam.nota.lawyer`
 - Bright Data zone `mcp_unlocker` with the $250 `unlocked` promo applied
-- Algolia, Storyblok, Speechmatics, Triggerware all on free tiers
+- Algolia, Speechmatics, Triggerware all on free tiers

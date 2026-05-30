@@ -123,7 +123,7 @@ This piece is the writeup for the [HackerNoon Proof of Usefulness](https://proof
 
 > **[github.com/banksythequantLab/lex-ny](https://github.com/banksythequantLab/lex-ny)** — Apache-2.0, 18-check smoke test included, six sponsor integrations verified end-to-end, full Python ingest pipeline reproducible from CourtListener bulk dumps.
 
-Seven sponsor integrations are live: Bright Data on every request, Neo4j AuraDB for the graph, Algolia for federated statute search at sub-100ms, Storyblok for the editorial blog, Speechmatics for voice input on the Ask page, Triggerware for federal-bill legislative watches.
+Six sponsor integrations are live: Bright Data on every request, Neo4j AuraDB for the graph, Algolia for federated statute search at sub-100ms, Speechmatics for voice input on the Ask page, Triggerware for federal-bill legislative watches.
 
 ## Why this matters beyond New York
 

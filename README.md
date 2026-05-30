@@ -95,7 +95,7 @@ There are also two purpose-built surfaces on top of the same corpus:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Sponsor integrations (6 live, end-to-end verified)
+### Sponsor integrations (5 live, end-to-end verified)
 
 | Sponsor | Product | How it's used | Proof |
 |---------|---------|---------------|-------|
@@ -103,7 +103,6 @@ There are also two purpose-built surfaces on top of the same corpus:
 | **Bright Data** | SERP API (same zone) | Real-time Google results for authoritative NY legal sources. | same |
 | **Neo4j AuraDB** | GraphRAG citation graph | 1.36M nodes / 6.3M relationships. `(:Opinion)-[:CITES]->(:Opinion)` traversal surfaces leading cases pure vector search misses. | [`/api/graph-stats`](nota-lex/app/api/graph-stats) |
 | **Algolia** | Federated search | 40,427 NY statute sections indexed; sub-100ms federated keyword search. | [`/api/algolia-stats`](nota-lex/app/api/algolia-stats) |
-| **Storyblok** | Headless CMS | [`/blog`](nota-lex/app/blog) editorial content with rich-text rendering. | [`/api/storyblok-stats`](nota-lex/app/api/storyblok-stats) |
 | **Speechmatics** | Real-time voice transcription | 🎙 mic button on `/ask` opens a WebSocket to Speechmatics RT; JWT minted server-side with `@speechmatics/auth`. | [`/api/speechmatics-stats`](nota-lex/app/api/speechmatics-stats) |
 | **Triggerware** | Connector-driven scheduled queries | `(:LegalWatch)`: describe a topic in English, Triggerware compiles SQL against `govtrack_bills`, polls for new federal bills, returns deltas. | [`/api/triggerware-stats`](nota-lex/app/api/triggerware-stats) |
 
@@ -139,7 +138,7 @@ npm install
 # Configure
 cp .env.example nota-lex/.env.local
 # Fill in: GROQ_API_KEY, BRIGHT_DATA_API_TOKEN, NEO4J_URI/USER/PASSWORD,
-# ALGOLIA_APP_ID + keys, STORYBLOK_ACCESS_TOKEN, SPEECHMATICS_API_KEY,
+# ALGOLIA_APP_ID + keys, SPEECHMATICS_API_KEY,
 # TRIGGERWARE_API_KEY, PGPASSWORD, COURTLISTENER_API_TOKEN (for incremental),
 # NY_SENATE_API_KEY (for statute re-seed)
 
@@ -182,7 +181,7 @@ Open [http://localhost:3000](http://localhost:3000). Visit `/stats` to confirm e
 - **Live web:** Bright Data Web Unlocker + SERP (default on every `/api/ask`)
 - **Citation graph:** Neo4j AuraDB enterprise (1.36M nodes, 6.3M relationships)
 - **Federated search:** Algolia (40K statute records)
-- **CMS:** Storyblok (editorial blog)
+- **CMS:** none (Lex.NY content is in-repo, no headless CMS dependency)
 - **Voice input:** Speechmatics real-time WebSocket
 - **Legislative watches:** Triggerware on the `govtrack_bills` connector
 - **Workspace:** npm workspaces (`nota-shared`, `nota-lex`, `nota-trademark`, `nota-copyright`)

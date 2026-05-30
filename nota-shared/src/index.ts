@@ -150,7 +150,6 @@ export {
   type StreamEvent,
 } from "./lex/index.js";
 
-
 // ============================================================
 //  Neo4j citation graph (HackerNoon Proof of Usefulness sponsor)
 // ============================================================
@@ -174,7 +173,6 @@ export {
   type Neo4jStats,
 } from "./graph/index.js";
 
-
 // ============================================================
 //  Algolia federated search (HackerNoon Proof of Usefulness sponsor)
 // ============================================================
@@ -195,22 +193,6 @@ export {
   type AlgoliaStats,
 } from "./search/index.js";
 
-
-// ============================================================
-//  Storyblok CMS (HackerNoon Proof of Usefulness sponsor)
-// ============================================================
-export {
-  isStoryblokConfigured,
-  getStoryblokClient,
-  listBlogPosts,
-  getBlogPost,
-  getStoryblokStats,
-  storyblokHealthCheck,
-  type BlogPost,
-  type StoryblokStats,
-} from "./cms/index.js";
-
-
 // ============================================================
 //  AI/ML API multi-model consensus (Bright Data UNLOCKED partner —  prize)
 // ============================================================
@@ -223,7 +205,6 @@ export {
   type ConsensusDraft,
   type ConsensusResult,
 } from "./llm-consensus.js";
-
 
 // ============================================================
 //  Cognee agent memory (Bright Data UNLOCKED partner — $2,400 + $500 prize)
@@ -240,7 +221,6 @@ export {
   type CogneeStats,
 } from "./memory/index.js";
 
-
 // ============================================================
 //  Speechmatics voice (STUB — Bright Data UNLOCKED partner, first 100 get $200 credits)
 // ============================================================
@@ -253,7 +233,6 @@ export {
   type SpeechmaticsConfig,
   type SpeechmaticsStats,
 } from "./voice/index.js";
-
 
 // ============================================================
 //  Triggerware workflow actions (STUB — Bright Data UNLOCKED partner)
@@ -277,7 +256,6 @@ export {
   type TriggerwareStats,
   type TriggerwareConfig,
 } from "./actions/index.js";
-
 
 // ============================================================
 //  Rate limiting (in-memory token bucket, single-node)

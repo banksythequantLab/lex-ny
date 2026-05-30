@@ -13,5 +13,8 @@
     "dev:trademark": "npm run dev --workspace=nota-trademark",
     "dev:copyright": "npm run dev --workspace=nota-copyright",
     "dev:lex": "npm run dev --workspace=nota-lex"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.3.0"
   }
 }

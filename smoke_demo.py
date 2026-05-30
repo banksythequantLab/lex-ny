@@ -48,7 +48,6 @@ check("/", lambda: page_loads("/", "Lex.NY"))
 check("/ask", lambda: page_loads("/ask", "Ask"))
 check("/stats", lambda: page_loads("/stats", "Every number here is live"))
 check("/search", lambda: page_loads("/search", "Find the case"))
-check("/blog", lambda: page_loads("/blog", ""))
 
 # 2. Sponsor stats APIs all return 200
 def stats_ok(path):
@@ -58,7 +57,6 @@ def stats_ok(path):
 check("/api/corpus-stats", lambda: stats_ok("/api/corpus-stats"))
 check("/api/algolia-stats", lambda: stats_ok("/api/algolia-stats"))
 check("/api/graph-stats", lambda: stats_ok("/api/graph-stats"))
-check("/api/storyblok-stats", lambda: stats_ok("/api/storyblok-stats"))
 check("/api/speechmatics-stats", lambda: stats_ok("/api/speechmatics-stats"))
 check("/api/triggerware-stats", lambda: stats_ok("/api/triggerware-stats"))
 check("/api/bright-data-stats", lambda: stats_ok("/api/bright-data-stats"))
