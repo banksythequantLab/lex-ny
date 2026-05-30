@@ -75,6 +75,7 @@ export default function StatsPage() {
       "algolia-stats",
       "speechmatics-stats",
       "triggerware-stats",
+      "llm-stats",
     ];
     eps.forEach((ep) => {
       fetch("/api/" + ep)
@@ -202,6 +203,7 @@ export default function StatsPage() {
           <SponsorCard name="Algolia" sub="Federated statute search" data={sponsors["algolia-stats"]} />
           <SponsorCard name="Speechmatics" sub="Voice input" data={sponsors["speechmatics-stats"]} />
           <SponsorCard name="Triggerware" sub="Legislative watches" data={sponsors["triggerware-stats"]} />
+          <SponsorCard name="Groq" sub="Llama 3.3 70B inference" data={sponsors["llm-stats"]} />
         </div>
 
         <p className="mt-10 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">

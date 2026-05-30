@@ -60,6 +60,7 @@ check("/api/graph-stats", lambda: stats_ok("/api/graph-stats"))
 check("/api/speechmatics-stats", lambda: stats_ok("/api/speechmatics-stats"))
 check("/api/triggerware-stats", lambda: stats_ok("/api/triggerware-stats"))
 check("/api/bright-data-stats", lambda: stats_ok("/api/bright-data-stats"))
+check("/api/llm-stats", lambda: stats_ok("/api/llm-stats"))
 
 # 3. Corpus numbers (live truth)
 def corpus_numbers():

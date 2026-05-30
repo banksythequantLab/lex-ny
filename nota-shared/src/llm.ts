@@ -15,6 +15,7 @@
  */
 
 import OpenAI from "openai";
+import { loadFromDisk, appendToDisk } from "./usage-store.js";
 
 export type LLMProvider = "groq" | "ollama" | "aimlapi";
 
@@ -117,26 +118,61 @@ export async function chat(opts: {
   response_format?: { type: "json_object" } | { type: "text" };
 }): Promise<OpenAI.Chat.ChatCompletionMessage> {
   const { client, config } = getLLMClient();
+  const started = Date.now();
 
-  const completion = await client.chat.completions.create({
-    model: config.model,
-    messages: [
-      { role: "system", content: opts.system },
-      ...opts.messages,
-    ],
-    tools: opts.tools,
-    tool_choice: opts.tool_choice,
-    temperature: opts.temperature ?? 0.2,
-    max_tokens: opts.max_tokens ?? 4096,
-    response_format: opts.response_format,
-  });
+  try {
+    const completion = await client.chat.completions.create({
+      model: config.model,
+      messages: [
+        { role: "system", content: opts.system },
+        ...opts.messages,
+      ],
+      tools: opts.tools,
+      tool_choice: opts.tool_choice,
+      temperature: opts.temperature ?? 0.2,
+      max_tokens: opts.max_tokens ?? 4096,
+      response_format: opts.response_format,
+    });
 
-  const message = completion.choices[0]?.message;
-  if (!message) {
-    throw new Error("LLM returned no message");
+    const message = completion.choices[0]?.message;
+    if (!message) {
+      llmUsage.record({
+        timestamp: new Date().toISOString(),
+        provider: config.provider,
+        model: config.model,
+        mode: "chat",
+        status: "error",
+        duration_ms: Date.now() - started,
+        error: "LLM returned no message",
+      });
+      throw new Error("LLM returned no message");
+    }
+
+    llmUsage.record({
+      timestamp: new Date().toISOString(),
+      provider: config.provider,
+      model: config.model,
+      mode: "chat",
+      status: "success",
+      duration_ms: Date.now() - started,
+      prompt_tokens: completion.usage?.prompt_tokens,
+      completion_tokens: completion.usage?.completion_tokens,
+      total_tokens: completion.usage?.total_tokens,
+    });
+
+    return message;
+  } catch (e) {
+    llmUsage.record({
+      timestamp: new Date().toISOString(),
+      provider: config.provider,
+      model: config.model,
+      mode: "chat",
+      status: "error",
+      duration_ms: Date.now() - started,
+      error: (e as Error).message,
+    });
+    throw e;
   }
-
-  return message;
 }
 
 /**
@@ -213,20 +249,148 @@ export async function* chatStream(opts: {
   max_tokens?: number;
 }): AsyncGenerator<string, void, unknown> {
   const { client, config } = getLLMClient();
+  const started = Date.now();
+  let charsOut = 0;
 
-  const stream = await client.chat.completions.create({
-    model: config.model,
-    messages: [
-      { role: "system", content: opts.system },
-      ...opts.messages,
-    ],
-    temperature: opts.temperature ?? 0.2,
-    max_tokens: opts.max_tokens ?? 4096,
-    stream: true,
-  });
+  try {
+    const stream = await client.chat.completions.create({
+      model: config.model,
+      messages: [
+        { role: "system", content: opts.system },
+        ...opts.messages,
+      ],
+      temperature: opts.temperature ?? 0.2,
+      max_tokens: opts.max_tokens ?? 4096,
+      stream: true,
+    });
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices?.[0]?.delta?.content;
-    if (delta) yield delta;
+    for await (const chunk of stream) {
+      const delta = chunk.choices?.[0]?.delta?.content;
+      if (delta) {
+        charsOut += delta.length;
+        yield delta;
+      }
+    }
+
+    llmUsage.record({
+      timestamp: new Date().toISOString(),
+      provider: config.provider,
+      model: config.model,
+      mode: "stream",
+      status: "success",
+      duration_ms: Date.now() - started,
+      // Streaming doesn't return token counts in the chunks; approximate
+      // completion_tokens from output chars (1 token ~= 4 chars for English).
+      completion_tokens: Math.round(charsOut / 4),
+    });
+  } catch (e) {
+    llmUsage.record({
+      timestamp: new Date().toISOString(),
+      provider: config.provider,
+      model: config.model,
+      mode: "stream",
+      status: "error",
+      duration_ms: Date.now() - started,
+      error: (e as Error).message,
+    });
+    throw e;
   }
 }
+
+
+
+/* ------------------------------------------------------------------ */
+/*  LlmUsageTracker - persistent counters for chat() and chatStream()   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One entry per LLM completion (or streamed completion). Recorded by
+ * chat() and chatStream() with disk persistence so the /api/llm-stats
+ * counters survive dev server restarts.
+ */
+export interface LlmUsageEntry {
+  timestamp: string;
+  provider: LLMProvider;
+  model: string;
+  /** "chat" = non-streaming, "stream" = SSE. */
+  mode: "chat" | "stream";
+  status: "success" | "error";
+  duration_ms: number;
+  /** Tokens out of the completion; only available in non-streaming mode. */
+  completion_tokens?: number;
+  /** Tokens in the prompt; only available in non-streaming mode. */
+  prompt_tokens?: number;
+  /** Total tokens; non-streaming mode only. */
+  total_tokens?: number;
+  /** Error message if status === "error". */
+  error?: string;
+}
+
+class LlmUsageTracker {
+  private entries: LlmUsageEntry[] = [];
+  private maxEntries = 500;
+  private storeName = "llm";
+
+  constructor() {
+    try {
+      this.entries = loadFromDisk<LlmUsageEntry>(this.storeName, this.maxEntries);
+    } catch (e) {
+      console.warn("[llm] usage tracker disk load failed:", (e as Error).message);
+    }
+  }
+
+  record(entry: LlmUsageEntry) {
+    this.entries.push(entry);
+    if (this.entries.length > this.maxEntries) {
+      this.entries = this.entries.slice(-this.maxEntries);
+    }
+    try {
+      appendToDisk<LlmUsageEntry>(this.storeName, entry);
+    } catch {
+      // Best-effort persistence
+    }
+  }
+
+  getAll(): LlmUsageEntry[] {
+    return [...this.entries];
+  }
+
+  getStats() {
+    const total = this.entries.length;
+    const success = this.entries.filter((e) => e.status === "success").length;
+    const byMode = this.entries.reduce((acc, e) => {
+      acc[e.mode] = (acc[e.mode] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const byProvider = this.entries.reduce((acc, e) => {
+      acc[e.provider] = (acc[e.provider] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const totalCompletionTokens = this.entries.reduce(
+      (s, e) => s + (e.completion_tokens || 0),
+      0
+    );
+    const totalPromptTokens = this.entries.reduce(
+      (s, e) => s + (e.prompt_tokens || 0),
+      0
+    );
+    const avgDuration = total > 0
+      ? Math.round(this.entries.reduce((s, e) => s + e.duration_ms, 0) / total)
+      : 0;
+    return {
+      total_requests: total,
+      successful: success,
+      failed: total - success,
+      by_mode: byMode,
+      by_provider: byProvider,
+      total_prompt_tokens: totalPromptTokens,
+      total_completion_tokens: totalCompletionTokens,
+      total_tokens: totalPromptTokens + totalCompletionTokens,
+      avg_duration_ms: avgDuration,
+      first_request_at: this.entries[0]?.timestamp,
+      last_request_at: this.entries[this.entries.length - 1]?.timestamp,
+    };
+  }
+}
+
+export const llmUsage = new LlmUsageTracker();

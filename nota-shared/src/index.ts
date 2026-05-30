@@ -84,6 +84,8 @@ export {
   chatJSON,
   chatStream,
   type LLMProvider,
+  llmUsage,
+  type LlmUsageEntry,
 } from "./llm.js";
 
 // Web data client — Bright Data Web Unlocker + SERP integration.

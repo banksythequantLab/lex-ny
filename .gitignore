@@ -110,3 +110,7 @@ seed-cases-debug.log
 embed-debug.log
 *.supabase-backup
 .next/
+
+# Usage tracker on-disk logs (regenerate at runtime)
+/data/
+/data/*.jsonl

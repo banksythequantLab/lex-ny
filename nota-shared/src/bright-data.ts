@@ -19,6 +19,8 @@
  * /api/bright-data-stats endpoint (proof of usage for the hackathon).
  */
 
+import { loadFromDisk, appendToDisk } from "./usage-store.js";
+
 const BRIGHTDATA_ENDPOINT = "https://api.brightdata.com/request";
 
 export interface SerpResult {
@@ -57,11 +59,28 @@ interface BdUsageEntry {
 class BrightDataUsageTracker {
   private entries: BdUsageEntry[] = [];
   private maxEntries = 500;
+  private storeName = "bright-data";
+
+  constructor() {
+    // Hydrate from disk on boot so counters survive dev server restarts.
+    // Best-effort; if the store fails (e.g. permission error on data/),
+    // run in pure in-memory mode.
+    try {
+      this.entries = loadFromDisk<BdUsageEntry>(this.storeName, this.maxEntries);
+    } catch (e) {
+      console.warn("[bright-data] usage tracker disk load failed:", (e as Error).message);
+    }
+  }
 
   record(entry: BdUsageEntry) {
     this.entries.push(entry);
     if (this.entries.length > this.maxEntries) {
       this.entries = this.entries.slice(-this.maxEntries);
+    }
+    try {
+      appendToDisk<BdUsageEntry>(this.storeName, entry);
+    } catch {
+      // Best-effort persistence; don't break the request path
     }
   }
 
