@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           >
             <span className="seal-badge">§</span> Lex.NY
           </Link>
-          <ul className="hidden md:flex gap-7 items-center text-sm text-[var(--color-ink-2)] list-none">
+          <ul className="flex flex-wrap gap-3 md:gap-7 items-center text-xs md:text-sm text-[var(--color-ink-2)] list-none">
             <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
             <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
             <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
