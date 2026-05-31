@@ -1,17 +1,16 @@
 "use client";
 
 /**
- * /web-search - live web search front-end powered by Bright Data SERP.
+ * /web-search - retired in the self-hosted release.
  *
- * Why this page exists: Lex.NY's corpus is the primary research surface,
- * but some questions are about events, news, or commentary that don't
- * live in case reporters. This page lets users do a live Google search
- * (routed through Bright Data Web Unlocker / SERP) inside the same
- * product, with the same editorial styling.
+ * Originally a live SERP front-end powered by Bright Data Web Unlocker.
+ * That integration cost a per-call fee and has been removed; the API
+ * endpoint at /api/web-search now returns { disabled: true } and this
+ * page renders a friendly notice pointing users at /search and /ask.
  *
- * Every search increments the Bright Data usage counter (visible on
- * /stats and /api/bright-data-stats), so this also serves as the
- * highest-visibility BD demo surface in the product.
+ * The form, error state, and result rendering remain in place so that
+ * if someone wires a self-hosted SearXNG (or similar free provider)
+ * into /api/web-search later, the UI will light up again automatically.
  */
 
 import { useState, useEffect } from "react";
@@ -111,9 +110,9 @@ export default function WebSearchPage() {
         <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2.5">
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block" />
-            Web search - powered by Bright Data
+            Web search - retired
           </span>
-          <span className="hidden md:inline">Live SERP - every call tracked on /stats</span>
+          <span className="hidden md:inline">Self-hosted release - corpus search via /search</span>
         </div>
       </div>
 
@@ -123,13 +122,14 @@ export default function WebSearchPage() {
           Web search
         </div>
         <h1 className="font-[family-name:var(--font-display)] text-5xl mb-4 leading-tight">
-          Search the live web.
+          Live web search is retired.
         </h1>
         <p className="text-lg text-[var(--color-ink-2)] leading-relaxed mb-8 max-w-[640px]">
-          For questions that live outside the corpus - recent news,
-          commentary, regulatory updates. Routed through Bright Data SERP,
-          so results are current and not subject to the bot-detection
-          blocks that hit normal scrapers.
+          The self-hosted release runs entirely on local infrastructure
+          (Postgres + Neo4j + Ollama). Live SERP scraping cost a per-call
+          fee and has been removed. For questions inside the corpus, use{" "}
+          <Link href="/search" className="underline">/search</Link> or{" "}
+          <Link href="/ask" className="underline">/ask</Link> instead.
         </p>
 
         {/* Search form */}
@@ -150,7 +150,7 @@ export default function WebSearchPage() {
             </Button>
           </div>
           <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mt-2">
-            Routed via Bright Data Web Unlocker - Google SERP - up to 15 results
+            This endpoint now returns a graceful retired-feature notice.
           </p>
         </form>
 
@@ -183,7 +183,7 @@ export default function WebSearchPage() {
         {loading && (
           <div className="border border-[var(--color-rule)]/30 rounded-sm bg-[var(--color-paper-2)] p-6 my-6">
             <p className="font-[family-name:var(--font-mono)] text-[11px] tracking-wider uppercase text-[var(--color-ink-2)]">
-              Fetching Bright Data SERP for {"\u201c"}{query}{"\u201d"}...
+              Fetching live web search for {"\u201c"}{query}{"\u201d"}...
             </p>
             <p className="text-sm text-[var(--color-ink-2)] mt-2">
               Typical latency: 1.5 - 3.5 seconds. Cold first-call may take longer.
@@ -204,7 +204,7 @@ export default function WebSearchPage() {
               </p>
             )}
             <p className="text-sm text-[var(--color-ink-2)] mt-3">
-              Bright Data may be rate-limiting or your zone may be down.
+              The web search provider may be unavailable, or the feature is disabled in this deployment.
               Check <Link href="/stats" className="underline">/stats</Link> for
               the latest health signal.
             </p>
@@ -251,7 +251,7 @@ export default function WebSearchPage() {
             </ol>
 
             <p className="mt-10 font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)]">
-              Powered by Bright Data Web Unlocker - every search counted on{" "}
+              Self-hosted release - all queries are counted on{" "}
               <Link href="/stats" className="underline hover:text-[var(--color-ink)]">
                 /stats
               </Link>

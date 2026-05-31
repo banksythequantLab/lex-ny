@@ -239,19 +239,25 @@ export default function StatsPage() {
           </div>
         </div>
 
-        {/* SPONSOR HEALTH WALL */}
-        <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Live integrations</h2>
+        {/* SELF-HOSTED STACK
+            Each card shows a piece of the production infrastructure as of
+            the self-host release. Cards that previously named paid sponsors
+            (Bright Data SERP, Speechmatics, Algolia, Groq) have been swapped
+            to the local stack: Ollama, Postgres FTS, the browser's Web
+            Speech API, and a retired card for web search.
+         */}
+        <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Live infrastructure</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <SponsorCard name="Bright Data" sub="Web Unlocker + SERP" data={sponsors["bright-data-stats"]} />
-          <SponsorCard name="Neo4j" sub="GraphRAG citation graph" data={sponsors["graph-stats"]} />
-          <SponsorCard name="Algolia" sub="Federated statute search" data={sponsors["algolia-stats"]} />
-          <SponsorCard name="Speechmatics" sub="Voice input" data={sponsors["speechmatics-stats"]} />
+          <SponsorCard name="Ollama (local)" sub="Qwen3 30B-A3B on RTX 3090" data={sponsors["llm-stats"]} />
+          <SponsorCard name="Postgres FTS" sub="44,758 NY statutes" data={sponsors["algolia-stats"]} />
+          <SponsorCard name="Neo4j Aura" sub="GraphRAG citation graph" data={sponsors["graph-stats"]} />
+          <SponsorCard name="Web Speech API" sub="Browser voice input (Chrome/Edge)" data={{ ok: true, stats: { configured: true } }} />
           <SponsorCard name="Triggerware" sub="Legislative watches" data={sponsors["triggerware-stats"]} />
-          <SponsorCard name="Groq" sub="Llama 3.3 70B inference" data={sponsors["llm-stats"]} />
+          <SponsorCard name="Live web search" sub="Retired (self-hosted release)" data={{ ok: false, stats: { configured: false } }} />
         </div>
 
         <p className="mt-10 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
-          Source: {corpus?.postgres?.ok ? "local Postgres (lex) \u00b7 Neo4j AuraDB" : "connecting\u2026"}
+          Source: {corpus?.postgres?.ok ? "local Postgres (lex) \u00b7 Neo4j AuraDB \u00b7 Ollama (RTX 3090)" : "connecting\u2026"}
         </p>
       </div>
     </main>
