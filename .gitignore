@@ -114,3 +114,6 @@ embed-debug.log
 # Usage tracker on-disk logs (regenerate at runtime)
 /data/
 /data/*.jsonl
+
+DEMO_CHEAT_SHEET.md
+

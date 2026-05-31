@@ -112,6 +112,7 @@ function Footer() {
             <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
             <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
             <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
+              <li><Link href="/web-search" className="hover:text-[var(--color-ink)]">Web search</Link></li>
             <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
             <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
             <li><Link href="/about" className="hover:text-[var(--color-ink)]">About</Link></li>
@@ -140,7 +141,7 @@ function Footer() {
 
       <div className="border-t border-[var(--color-rule)]/30">
         <div className="max-w-[1180px] mx-auto px-7 py-4 flex flex-wrap justify-between items-center gap-3 text-xs text-[var(--color-ink-2)]">
-          <span>© 2026 Lex.NY · Built by a NY attorney for the bar</span>
+          <span></span>
           <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
             <a
               href="https://github.com/banksythequantLab/lex-ny"

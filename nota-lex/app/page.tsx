@@ -45,7 +45,7 @@ interface GraphStats {
 }
 
 function fmt(n: number | undefined): string {
-  if (n === undefined || n === null) return "â";
+  if (n === undefined || n === null) return "—";
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "") + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
@@ -80,13 +80,13 @@ export default function LexLandingPage() {
           <div className="flex gap-5 items-center">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block animate-pulse" />
-              In session Â· NY-licensed attorney supervised
+              In session · NY-licensed attorney supervised
             </span>
             <span className="hidden md:inline">Docket no. BD-2026-LEX-NY</span>
           </div>
           <div className="flex gap-5">
-            <span className="hidden sm:inline">S.D.N.Y. Â· E.D.N.Y.</span>
-            <span>Open source Â· Apache-2.0</span>
+            <span className="hidden sm:inline">S.D.N.Y. · E.D.N.Y.</span>
+            <span>Open source · Apache-2.0</span>
           </div>
         </div>
       </div>
@@ -98,23 +98,24 @@ export default function LexLandingPage() {
             href="/"
             className="flex items-center gap-3.5 font-[family-name:var(--font-display)] font-semibold text-[22px] tracking-tight"
           >
-            <span className="seal-badge">Â§</span>
+            <span className="seal-badge">§</span>
             Lex.NY
           </Link>
           <ul className="hidden md:flex gap-6 items-center text-sm text-[var(--color-ink-2)] list-none">
             <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
             <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
+            <li><Link href="/web-search" className="hover:text-[var(--color-ink)]">Web</Link></li>
             <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
             <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
             <li><Link href="/how-it-works" className="hover:text-[var(--color-ink)]">How it works</Link></li>
             <li>
               <Button asChild>
-                <Link href="/ask">Start research â</Link>
+                <Link href="/ask">Start research →</Link>
               </Button>
             </li>
           </ul>
           <Button asChild className="md:hidden">
-            <Link href="/ask">Ask â</Link>
+            <Link href="/ask">Ask →</Link>
           </Button>
         </div>
       </nav>
@@ -124,7 +125,7 @@ export default function LexLandingPage() {
         <div className="max-w-[1180px] mx-auto px-7 grid lg:grid-cols-[1.25fr_0.85fr] gap-12 items-start">
           <div>
             <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-3">
-              Lex.NY Â· Research engine for New York law
+              Lex.NY · Research engine for New York law
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-[58px] md:text-[64px] leading-[0.96] font-normal tracking-tight mb-6">
               Every case.<br />
@@ -136,7 +137,7 @@ export default function LexLandingPage() {
             </p>
             <div className="flex flex-wrap gap-4 items-center">
               <Button asChild size="lg">
-                <Link href="/ask">Ask a research question â</Link>
+                <Link href="/ask">Ask a research question →</Link>
               </Button>
               <Link
                 href="/how-it-works"
@@ -176,14 +177,14 @@ export default function LexLandingPage() {
       <section className="border-t border-[var(--color-rule)]/30 bg-[var(--color-paper-2)]">
         <div className="max-w-[1180px] mx-auto px-7 py-10 grid grid-cols-2 md:grid-cols-5 gap-6">
           <Stat n={fmt(records)} label="Legal records" accent />
-          <Stat n={fmt(opinions)} label="Opinions" sub="1714 â 2026" />
+          <Stat n={fmt(opinions)} label="Opinions" sub="1714 – 2026" />
           <Stat n={fmt(statutes)} label="Statute sections" sub="all 137 NY laws" />
-          <Stat n={fmt(citations)} label="Citation edges" sub="opinion â opinion" />
+          <Stat n={fmt(citations)} label="Citation edges" sub="opinion → opinion" />
           <Stat n={fmt(graphRels)} label="Graph relationships" sub="Neo4j AuraDB" />
         </div>
         <div className="max-w-[1180px] mx-auto px-7 pb-6">
           <p className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)]">
-            Live Â· pulled from{" "}
+            Live · pulled from{" "}
             <Link href="/stats" className="underline hover:text-[var(--color-ink)]">/stats</Link>
             {" "}on page load
           </p>
@@ -197,24 +198,24 @@ export default function LexLandingPage() {
             How Lex.NY works
           </div>
           <h2 className="font-[family-name:var(--font-display)] text-[40px] leading-tight mb-12 max-w-[820px]">
-            Built so the model <em className="italic text-[var(--color-seal-deep)]">canât</em> hallucinate.
+            Built so the model <em className="italic text-[var(--color-seal-deep)]">can’t</em> hallucinate.
           </h2>
 
           <div className="grid md:grid-cols-3 gap-10 mb-10">
             <ArchCard
-              n="Â§ 1"
+              n="§ 1"
               title="A NY-specific corpus"
               body="1.32 million indexed opinions from the NY Court of Appeals, all four Appellate Divisions, and the federal SDNY / EDNY, plus all 137 NY Consolidated Laws and 40,000 statute sections. Embedded into pgvector locally with mxbai-embed-large (1024-d)."
             />
             <ArchCard
-              n="Â§ 2"
+              n="§ 2"
               title="Graph beats vectors"
-              body="Pure vector search returns cases that read alike. The 6.95 million-edge citation graph in Neo4j returns cases that matter â leading precedent surfaced by traversal, not similarity. CITES + APPLIES edges seeded from every retrieved opinion."
+              body="Pure vector search returns cases that read alike. The 6.95 million-edge citation graph in Neo4j returns cases that matter — leading precedent surfaced by traversal, not similarity. CITES + APPLIES edges seeded from every retrieved opinion."
             />
             <ArchCard
-              n="Â§ 3"
+              n="§ 3"
               title="Citations are mandatory"
-              body="Llama 3.3 70B drafts the answer through Groq, but the system prompt forbids any unsourced claim. Every paragraph anchors to a numbered marker pointing into the retrieval context. If the corpus doesnât cover the question, Lex.NY abstains."
+              body="Llama 3.3 70B drafts the answer through Groq, but the system prompt forbids any unsourced claim. Every paragraph anchors to a numbered marker pointing into the retrieval context. If the corpus doesn’t cover the question, Lex.NY abstains."
             />
           </div>
           <div className="flex items-center gap-4 mt-8 flex-wrap">
@@ -222,7 +223,7 @@ export default function LexLandingPage() {
               href="/how-it-works"
               className="text-sm font-[family-name:var(--font-mono)] tracking-wider uppercase border border-[var(--color-seal-deep)] text-[var(--color-seal-deep)] rounded px-3 py-1.5 hover:bg-[var(--color-seal-deep)] hover:text-white transition-colors"
             >
-              Full architecture â
+              Full architecture →
             </Link>
             <Link href="/stats" className="text-sm text-[var(--color-ink-2)] hover:text-[var(--color-ink)] underline underline-offset-4">
               Or see every number live on /stats
@@ -235,7 +236,7 @@ export default function LexLandingPage() {
       <section className="border-t border-[var(--color-rule)]/30 py-14 bg-[var(--color-paper-2)]">
         <div className="max-w-[1180px] mx-auto px-7">
           <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">
-            Built with â 5 sponsor integrations + Groq, all verified end-to-end
+            Built with — 5 sponsor integrations + Groq, all verified end-to-end
           </div>
           <h2 className="font-[family-name:var(--font-display)] text-[34px] leading-tight mb-10 max-w-[800px]">
             Real infrastructure. Real numbers. <em className="italic">Receipts on every page.</em>
@@ -244,7 +245,7 @@ export default function LexLandingPage() {
             <SponsorTile
               name="Bright Data"
               role="Web Unlocker + SERP"
-              detail="Three parallel calls on every /api/ask â nysenate.gov, law.justia.com, courtlistener.com â for live, current statutory and decisional text."
+              detail="Three parallel calls on every /api/ask — nysenate.gov, law.justia.com, courtlistener.com — for live, current statutory and decisional text."
             />
             <SponsorTile
               name="Neo4j AuraDB"
@@ -254,7 +255,7 @@ export default function LexLandingPage() {
             <SponsorTile
               name="Algolia"
               role="Federated statute search"
-              detail="All 40,000 NY statute sections indexed for sub-100ms keyword + facet search. Powers the search pageâs instant statute lookup."
+              detail="All 40,000 NY statute sections indexed for sub-100ms keyword + facet search. Powers the search page’s instant statute lookup."
             />
             <SponsorTile
               name="Speechmatics"
@@ -273,7 +274,7 @@ export default function LexLandingPage() {
             />
           </div>
           <p className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)] mt-10">
-            Submitted to Web Data UNLOCKED Â· HackerNoon Proof of Usefulness
+            Submitted to Web Data UNLOCKED · HackerNoon Proof of Usefulness
           </p>
         </div>
       </section>
@@ -285,13 +286,13 @@ export default function LexLandingPage() {
             Open the corpus. Ask a question. <em className="italic text-[var(--color-seal-deep)]">Verify every cite.</em>
           </h2>
           <p className="text-[var(--color-ink-2)] mb-7 max-w-[560px] mx-auto leading-relaxed">
-            Free, public, rate-limited, attorney-supervised. The repo is on GitHub. The model canât see anything that wasnât retrieved first.
+            Free, public, rate-limited, attorney-supervised. The repo is on GitHub. The model can’t see anything that wasn’t retrieved first.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <Button asChild size="lg">
-              <Link href="/ask">Ask a research question â</Link>
+              <Link href="/ask">Ask a research question →</Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="ghost" size="lg">
               <a href="https://github.com/banksythequantLab/lex-ny" target="_blank" rel="noopener noreferrer">
                 View source on GitHub
               </a>
