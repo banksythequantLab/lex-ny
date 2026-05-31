@@ -1,222 +1,241 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { RealtimeClient } from "@speechmatics/real-time-client";
-
 /**
- * VoiceInputButton — microphone-driven voice input for the /ask page,
- * powered by Speechmatics Realtime transcription.
+ * VoiceInputButton — voice dictation via the browser's Web Speech API.
  *
- * Flow:
- *   1. User clicks the mic.
- *   2. We POST /api/speechmatics/temp-key to mint a 60-second JWT
- *      (the long-lived API key never reaches the browser).
- *   3. We open a Realtime WebSocket via @speechmatics/real-time-client,
- *      configured with { url } and authenticated with the JWT.
- *   4. We getUserMedia({ audio: true }) and feed 16kHz PCM_S16LE chunks
- *      from a ScriptProcessorNode to the WebSocket.
- *   5. AddPartialTranscript / AddTranscript events update the textarea.
- *   6. On click again we close cleanly.
+ * Self-hosted era: previously this used Speechmatics ($1/hour). Now it
+ * uses the browser's built-in SpeechRecognition (free, runs entirely
+ * on the client side — Chrome calls Google's speech API but no key,
+ * no credits, no per-request cost to us).
  *
- * Hackathon: First 100 participants at the Bright Data UNLOCKED event get
- *            $200 in free Speechmatics credits.
+ * Behavior (matches the prior Speechmatics interface so the /ask and
+ * /search wire-ups don't change):
+ *   - Click to toggle. Stops automatically after ~5s of silence; user
+ *     can also click to stop.
+ *   - Emits onPartialTranscript(text) repeatedly with the current
+ *     in-progress segment (no leading punctuation, capitalized).
+ *   - Emits onFinalTranscript(text) once per segment when the
+ *     recognizer finalizes (typically when the speaker pauses).
+ *
+ * Browser support:
+ *   - Chrome / Edge: full support
+ *   - Safari: experimental support (with webkitSpeechRecognition)
+ *   - Firefox: not supported — button shows a fallback message
+ *
+ * If unsupported the button is rendered but disabled, with a tooltip
+ * pointing the user at Chrome.
  */
 
+import { useEffect, useRef, useState } from "react";
+
 interface Props {
-  /** Called as the user speaks; replace the textarea contents. */
   onPartialTranscript: (text: string) => void;
-  /** Called when a turn finalizes; append to the textarea. */
   onFinalTranscript: (text: string) => void;
-  /** Visual state hint */
   disabled?: boolean;
 }
 
-type VoiceState = "idle" | "requesting-key" | "connecting" | "listening" | "error";
-
-// Build the spoken text from a list of RecognitionResults. Each result has
-// `alternatives[0].content` (the word/punctuation) and `type` ('word' | 'punctuation').
-type RecognitionResultLike = {
-  type?: string;
-  alternatives?: Array<{ content?: string }>;
-};
-function joinResults(results: RecognitionResultLike[] | undefined): string {
-  if (!results || results.length === 0) return "";
-  let out = "";
-  for (const r of results) {
-    const piece = r?.alternatives?.[0]?.content ?? "";
-    if (!piece) continue;
-    if (r.type === "punctuation") {
-      out += piece;
-    } else {
-      out += (out.length ? " " : "") + piece;
-    }
-  }
-  return out;
+// SpeechRecognition is a vendor-prefixed Web API. TypeScript's DOM lib
+// doesn't include it by default, so we declare just enough to use it
+// without pulling in @types/dom-speech-recognition (which conflicts with
+// some build setups).
+interface SpeechRecognitionEventLike {
+  results: ArrayLike<{
+    isFinal: boolean;
+    [index: number]: { transcript: string };
+  }>;
+  resultIndex: number;
 }
 
-export function VoiceInputButton({ onPartialTranscript, onFinalTranscript, disabled }: Props) {
-  const [state, setState] = useState<VoiceState>("idle");
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+  message?: string;
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((ev: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+type Status = "idle" | "listening" | "error";
+
+export function VoiceInputButton({
+  onPartialTranscript,
+  onFinalTranscript,
+  disabled,
+}: Props) {
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [supported, setSupported] = useState<boolean | null>(null);
+  const recognizerRef = useRef<SpeechRecognitionLike | null>(null);
 
-  const clientRef = useRef<RealtimeClient | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-
-  const stop = useCallback(async () => {
-    try {
-      processorRef.current?.disconnect();
-      sourceRef.current?.disconnect();
-      await audioCtxRef.current?.close();
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      if (clientRef.current) {
-        try {
-          await clientRef.current.stopRecognition({ noTimeout: true });
-        } catch {
-          /* ignore — already closed */
-        }
-      }
-    } finally {
-      processorRef.current = null;
-      sourceRef.current = null;
-      audioCtxRef.current = null;
-      streamRef.current = null;
-      clientRef.current = null;
-      setState("idle");
-    }
+  // Detect support once, client-side only (SSR has no window).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
+    setSupported(Boolean(Ctor));
   }, []);
 
-  useEffect(() => {
-    // Clean up on unmount
-    return () => {
-      void stop();
-    };
-  }, [stop]);
-
-  const start = useCallback(async () => {
-    setError(null);
-    setState("requesting-key");
-    try {
-      // 1. Mint JWT
-      const keyRes = await fetch("/api/speechmatics/temp-key", { method: "POST" });
-      if (!keyRes.ok) {
-        const body = await keyRes.text();
-        throw new Error(`Could not mint temp key: ${keyRes.status} ${body.slice(0, 200)}`);
+  function stop() {
+    const r = recognizerRef.current;
+    if (r) {
+      try {
+        r.stop();
+      } catch {
+        // already stopped
       }
-      const { jwt, ws_url } = (await keyRes.json()) as { jwt: string; ws_url: string };
-
-      // 2. Open Speechmatics RT WebSocket via the SDK
-      setState("connecting");
-      const client = new RealtimeClient({ url: ws_url });
-      clientRef.current = client;
-
-      client.addEventListener("receiveMessage", (e) => {
-        const data = e.data;
-        if (!data || typeof data !== "object") return;
-        const msg = (data as { message?: string }).message;
-        if (msg === "AddPartialTranscript") {
-          const t = joinResults((data as { results?: RecognitionResultLike[] }).results);
-          if (t) onPartialTranscript(t);
-        } else if (msg === "AddTranscript") {
-          const t = joinResults((data as { results?: RecognitionResultLike[] }).results);
-          if (t) onFinalTranscript(t);
-        } else if (msg === "Error") {
-          const reason = (data as { reason?: string }).reason || "unknown error";
-          setError(`Speechmatics: ${reason}`);
-          setState("error");
-          void stop();
-        }
-      });
-
-      await client.start(jwt, {
-        transcription_config: {
-          language: "en",
-          enable_partials: true,
-          max_delay: 1.5,
-          operating_point: "enhanced",
-        },
-        audio_format: {
-          type: "raw",
-          encoding: "pcm_s16le",
-          sample_rate: 16000,
-        },
-      });
-
-      // 3. Mic stream
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 16000, echoCancellation: true, noiseSuppression: true },
-      });
-      streamRef.current = stream;
-
-      // Resample to 16kHz PCM_S16LE via a ScriptProcessor.
-      // (AudioWorklet would be cleaner but ScriptProcessor avoids the
-      // worklet-loader dance for a hackathon demo and works in all evergreens.)
-      type AudioContextCtor = typeof AudioContext;
-      const Ctx = (window.AudioContext ||
-        (window as unknown as { webkitAudioContext: AudioContextCtor }).webkitAudioContext) as AudioContextCtor;
-      const audioCtx = new Ctx({ sampleRate: 16000 });
-      audioCtxRef.current = audioCtx;
-      const source = audioCtx.createMediaStreamSource(stream);
-      sourceRef.current = source;
-      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-      processorRef.current = processor;
-      processor.onaudioprocess = (e) => {
-        const float = e.inputBuffer.getChannelData(0);
-        const int16 = new Int16Array(float.length);
-        for (let i = 0; i < float.length; i++) {
-          const v = Math.max(-1, Math.min(1, float[i]));
-          int16[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
-        }
-        try {
-          client.sendAudio(int16.buffer);
-        } catch {
-          /* WS may have closed — outer stop handles state */
-        }
-      };
-      source.connect(processor);
-      processor.connect(audioCtx.destination);
-
-      setState("listening");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setState("error");
-      void stop();
     }
-  }, [onPartialTranscript, onFinalTranscript, stop]);
+    recognizerRef.current = null;
+    setStatus("idle");
+  }
 
-  const onClick = useCallback(() => {
-    if (state === "listening") void stop();
-    else if (state === "idle" || state === "error") void start();
-  }, [state, start, stop]);
+  function start() {
+    setError(null);
+    if (typeof window === "undefined") return;
+    const w = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!Ctor) {
+      setSupported(false);
+      setError("Voice input requires Chrome or Edge.");
+      setStatus("error");
+      return;
+    }
 
-  const label =
-    state === "listening" ? "Stop"
-    : state === "connecting" ? "Connecting…"
-    : state === "requesting-key" ? "Authorizing…"
-    : "🎙 Speak";
+    const r: SpeechRecognitionLike = new Ctor();
+    r.continuous = true;        // Keep listening across pauses
+    r.interimResults = true;    // Emit partials as the user speaks
+    r.lang = "en-US";
+    r.maxAlternatives = 1;
+
+    // Track which results have already been finalized so we don't
+    // re-emit them on every onresult fire.
+    let lastFinalizedIndex = 0;
+
+    r.onresult = (ev) => {
+      // The results array grows; resultIndex tells us where new content
+      // starts. We walk from lastFinalizedIndex through results.length.
+      let interimText = "";
+      for (let i = lastFinalizedIndex; i < ev.results.length; i++) {
+        const result = ev.results[i];
+        const transcript = result[0]?.transcript ?? "";
+        if (result.isFinal) {
+          // Commit each finalized segment exactly once.
+          const finalText = transcript.trim();
+          if (finalText.length > 0) {
+            onFinalTranscript(finalText);
+          }
+          lastFinalizedIndex = i + 1;
+        } else {
+          interimText += transcript;
+        }
+      }
+      const partial = interimText.trim();
+      if (partial.length > 0) {
+        onPartialTranscript(partial);
+      }
+    };
+
+    r.onerror = (ev) => {
+      const code = ev.error;
+      // "no-speech" is normal — fires when the user is quiet. Don't
+      // surface as an error.
+      if (code === "no-speech" || code === "aborted") return;
+      if (code === "not-allowed" || code === "service-not-allowed") {
+        setError("Microphone permission denied. Check the site permissions.");
+      } else if (code === "audio-capture") {
+        setError("No microphone detected.");
+      } else {
+        setError("Voice error: " + code);
+      }
+      setStatus("error");
+      recognizerRef.current = null;
+    };
+
+    r.onend = () => {
+      // Auto-stop fired (silence timeout or browser-imposed cap).
+      // If we're still meant to be listening, restart; otherwise idle.
+      if (recognizerRef.current === r && status === "listening") {
+        // Browser ended the session on us — let it stay idle and let
+        // the user re-click. Auto-restart can loop forever on some
+        // mics.
+        recognizerRef.current = null;
+        setStatus("idle");
+      }
+    };
+
+    try {
+      r.start();
+      recognizerRef.current = r;
+      setStatus("listening");
+    } catch (e) {
+      setError("Could not start microphone: " + (e as Error).message);
+      setStatus("error");
+    }
+  }
+
+  // Clean up on unmount so a navigation-away doesn't leave the mic open.
+  useEffect(() => {
+    return () => {
+      const r = recognizerRef.current;
+      if (r) {
+        try { r.abort(); } catch {}
+      }
+      recognizerRef.current = null;
+    };
+  }, []);
+
+  const isListening = status === "listening";
+  const isDisabled = disabled || supported === false;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <button
         type="button"
-        onClick={onClick}
-        disabled={disabled || state === "requesting-key" || state === "connecting"}
+        onClick={isListening ? stop : start}
+        disabled={isDisabled}
+        aria-label={isListening ? "Stop voice input" : "Start voice input"}
         className={
-          "px-3 py-1.5 rounded-sm border text-sm font-medium transition-colors " +
-          (state === "listening"
-            ? "bg-red-700 text-white border-red-800 animate-pulse"
-            : "bg-[var(--color-paper)] border-[var(--color-rule)]/40 hover:border-[var(--color-seal-deep)]")
+          "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] tracking-wider uppercase rounded-full border transition-colors " +
+          (isDisabled
+            ? "border-[var(--color-rule)]/30 text-[var(--color-ink-2)]/50 cursor-not-allowed"
+            : isListening
+            ? "border-red-500 bg-red-500/10 text-red-600 cursor-pointer"
+            : "border-[var(--color-rule)]/40 text-[var(--color-ink-2)] hover:border-[var(--color-seal-deep)] hover:text-[var(--color-seal-deep)] cursor-pointer")
         }
-        title="Voice input powered by Speechmatics Realtime"
+        title={
+          supported === false
+            ? "Voice input requires Chrome or Edge"
+            : isListening
+            ? "Click to stop"
+            : "Click to dictate"
+        }
       >
-        {label}
+        <span
+          className={
+            "inline-block w-1.5 h-1.5 rounded-full " +
+            (isListening ? "bg-red-500 animate-pulse" : "bg-current opacity-60")
+          }
+        />
+        {isListening ? "Listening… (click to stop)" : "🎙 Speak"}
       </button>
       {error && (
-        <span className="text-xs text-red-700">{error}</span>
-      )}
-      {state === "listening" && (
-        <span className="text-xs text-[var(--color-ink-2)]">Listening — speak your question…</span>
+        <span className="text-xs text-red-600 font-[family-name:var(--font-mono)]">
+          {error}
+        </span>
       )}
     </div>
   );

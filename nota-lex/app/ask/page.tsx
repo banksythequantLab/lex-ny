@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,19 @@ function AskPageInner() {
   const initialQ = searchParams.get("q") || "";
 
   const [question, setQuestion] = useState(initialQ);
-  const [useLiveSerp, setUseLiveSerp] = useState(false);
+  // Bright Data live SERP retired (self-hosted era). use_live_serp is
+  // always sent as false; the toggle was removed from the UI.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LexAnswer | null>(null);
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
+
+  // Voice-dictation baseline: the value of `question` AT THE TIME a voice
+  // session began (or just after the most recent finalized segment).
+  // Partial transcripts grow from this baseline; final transcripts advance
+  // it. When the user types manually, we reset it to null so the next mic
+  // activation re-anchors to the new text.
+  const voiceBaselineRef = useRef<string | null>(null);
 
   // Auto-fire if landed via ?q= link
   useEffect(() => {
@@ -39,8 +47,8 @@ function AskPageInner() {
       "Embedding your question…",
       "Searching the NY appellate corpus…",
       "Searching the Consolidated Laws…",
-      useLiveSerp ? "Fetching live web sources via Bright Data…" : "Ranking sources by relevance…",
-      "Asking Llama 3.3 70B to draft an answer with citations…",
+      "Ranking sources by relevance…",
+      "Asking Qwen3 30B on the local GPU to draft an answer with citations…",
     ];
     let stageIdx = 0;
     const stageInterval = setInterval(() => {
@@ -61,7 +69,7 @@ function AskPageInner() {
       const res = await fetch("/api/ask/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-        body: JSON.stringify({ question: q, use_live_serp: useLiveSerp }),
+        body: JSON.stringify({ question: q, use_live_serp: false }),
       });
       if (!res.ok || !res.body) {
         throw new Error(`Stream open failed: ${res.status}`);
@@ -183,21 +191,7 @@ function AskPageInner() {
           </div>
         </div>
       </div>
-
-      <nav className="sticky top-0 z-50 bg-[var(--color-paper)]/85 backdrop-blur border-b border-[var(--color-rule)]/30">
-        <div className="max-w-[1180px] mx-auto flex items-center justify-between px-7 py-3.5">
-          <Link href="/" className="flex items-center gap-3.5 font-[family-name:var(--font-display)] font-semibold text-[22px] tracking-tight">
-            <span className="seal-badge">§</span>
-            Lex.NY
-          </Link>
-          <ul className="flex flex-wrap gap-3 md:gap-7 items-center text-xs md:text-sm text-[var(--color-ink-2)] list-none">
-            <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
-            <li><a href="https://nota.lawyer" className="hover:text-[var(--color-ink)]">Nota.Lawyer</a></li>
-          </ul>
-        </div>
-      </nav>
-
-      {/* Search panel */}
+        {/* Search panel */}
       <section className="py-12 pb-8">
         <div className="max-w-[1180px] mx-auto px-7">
           <div className="editorial-label mb-2">Ask Lex.NY</div>
@@ -211,14 +205,39 @@ function AskPageInner() {
                 <div className="mb-2 flex items-center justify-between">
                   <label className="editorial-label">Your question (plain English)</label>
                   <VoiceInputButton
-                    onPartialTranscript={(t) => setQuestion(t)}
-                    onFinalTranscript={(t) => setQuestion((prev) => (prev && !prev.endsWith(t) ? prev + " " + t : t))}
+                    onPartialTranscript={(t) => {
+                      // Capture the baseline (text the user already had, or the
+                      // committed-so-far text after a prior final) exactly once
+                      // at the start of each segment. While the segment is in
+                      // progress, every partial replaces only the segment's
+                      // suffix — it never wipes the baseline.
+                      if (voiceBaselineRef.current === null) {
+                        voiceBaselineRef.current = question;
+                      }
+                      const base = voiceBaselineRef.current;
+                      setQuestion(base + (base.trim() ? " " : "") + t);
+                    }}
+                    onFinalTranscript={(t) => {
+                      // Commit the segment: append to the baseline and advance
+                      // it so the NEXT segment grows from this finalized text
+                      // instead of overwriting it.
+                      const base = voiceBaselineRef.current ?? question;
+                      const next = base + (base.trim() ? " " : "") + t;
+                      setQuestion(next);
+                      voiceBaselineRef.current = next;
+                    }}
                     disabled={loading}
                   />
                 </div>
                 <textarea
                   value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
+                  onChange={(e) => {
+                    setQuestion(e.target.value);
+                    // User took manual control of the textarea — clear the
+                    // voice baseline so the next mic activation re-anchors
+                    // to whatever they typed.
+                    voiceBaselineRef.current = null;
+                  }}
                   placeholder="e.g. What are the elements of fraud under NY law?"
                   rows={3}
                   className="w-full rounded-sm border border-[var(--color-rule)]/40 p-3 text-base bg-[var(--color-paper)] focus:outline-none focus:border-[var(--color-seal-deep)]"
@@ -226,16 +245,7 @@ function AskPageInner() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-[var(--color-ink-2)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useLiveSerp}
-                    onChange={(e) => setUseLiveSerp(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  Augment with live web sources (Bright Data SERP)
-                </label>
+              <div className="flex items-center justify-end">
                 <Button onClick={onSubmit} disabled={loading} size="lg">
                   {loading ? "Researching…" : "Ask Lex.NY →"}
                 </Button>

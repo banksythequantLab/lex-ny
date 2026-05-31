@@ -117,3 +117,15 @@ embed-debug.log
 
 DEMO_CHEAT_SHEET.md
 
+
+nota-lex/setup_pg_fts.js
+nota-lex/pg_inspect.js
+
+
+# Self-host migration artifacts (one-time)
+nota-lex/setup_pg_fts.js
+nota-lex/pg_inspect.js
+nota-lex/.env.local.before-selfhost
+nota-lex/app/*.bak*
+nota-lex/app/**/*.bak*
+nota-lex/data/

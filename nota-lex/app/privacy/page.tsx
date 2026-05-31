@@ -18,27 +18,7 @@ export default function PrivacyPage() {
           <span>Last updated: May 30, 2026</span>
         </div>
       </div>
-
-      <nav className="sticky top-0 z-50 bg-[var(--color-paper)]/85 backdrop-blur border-b border-[var(--color-rule)]/30">
-        <div className="max-w-[1180px] mx-auto flex items-center justify-between px-7 py-3.5">
-          <Link
-            href="/"
-            className="flex items-center gap-3.5 font-[family-name:var(--font-display)] font-semibold text-[22px] tracking-tight"
-          >
-            <span className="seal-badge">§</span> Lex.NY
-          </Link>
-          <ul className="flex flex-wrap gap-3 md:gap-7 items-center text-xs md:text-sm text-[var(--color-ink-2)] list-none">
-            <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
-            <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
-            <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
-            <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
-            <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
-            <li><Link href="/about" className="hover:text-[var(--color-ink)]">About</Link></li>
-          </ul>
-        </div>
-      </nav>
-
-      <article className="max-w-[760px] mx-auto px-7 py-14">
+        <article className="max-w-[760px] mx-auto px-7 py-14">
         <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-2">
           Privacy
         </div>

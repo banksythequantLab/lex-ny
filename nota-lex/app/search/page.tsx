@@ -8,8 +8,9 @@
  * similarity and augmented with citation-graph influence ("× cites").
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { VoiceInputButton } from "../ask/VoiceInputButton";
 
 interface Hit {
   id: string;
@@ -53,6 +54,11 @@ export default function SearchPage() {
   const [res, setRes] = useState<SearchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Voice dictation baseline (see /ask for the same pattern). Anchors the
+  // current voice segment to whatever text was in the input when the mic
+  // started; reset to null when the user types manually.
+  const voiceBaselineRef = useRef<string | null>(null);
+
   // doSearch() runs the actual API call. It takes the query as a parameter
   // so chip-click handlers can pass the chip text directly without waiting
   // for setQ() state to propagate. search() is the form-submit wrapper.
@@ -91,23 +97,7 @@ export default function SearchPage() {
           <span>pgvector ANN over 1.32M NY decisions</span>
         </div>
       </div>
-
-      <nav className="sticky top-0 z-50 bg-[var(--color-paper)]/85 backdrop-blur border-b border-[var(--color-rule)]/30">
-        <div className="max-w-[1180px] mx-auto flex items-center justify-between px-7 py-3.5">
-          <Link href="/" className="flex items-center gap-3.5 font-[family-name:var(--font-display)] font-semibold text-[22px] tracking-tight">
-            <span className="seal-badge">§</span> Lex.NY
-          </Link>
-          <ul className="flex flex-wrap gap-3 md:gap-7 items-center text-xs md:text-sm text-[var(--color-ink-2)] list-none">
-            <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
-            <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
-            <li><Link href="/web-search" className="hover:text-[var(--color-ink)]">Web</Link></li>
-            <li><Link href="/corpus" className="hover:text-[var(--color-ink)]">Corpus</Link></li>
-            <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
-          </ul>
-        </div>
-      </nav>
-
-      <div className="max-w-[1180px] mx-auto px-7 py-12">
+        <div className="max-w-[1180px] mx-auto px-7 py-12">
         <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-2">
           Lex.NY · Case search
         </div>
@@ -119,11 +109,14 @@ export default function SearchPage() {
           NY decisions by semantic meaning, and ranks them by how often they&rsquo;ve been cited.
         </p>
 
-        <form onSubmit={search} className="mb-6 flex gap-2">
+        <form onSubmit={search} className="mb-3 flex gap-2">
           <input
             type="text"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              setQ(e.target.value);
+              voiceBaselineRef.current = null;
+            }}
             placeholder="e.g. summary judgment standard in negligence cases"
             className="flex-1 border border-[var(--color-rule)]/40 bg-[var(--color-paper)] px-4 py-3 text-base rounded-sm focus:outline-none focus:border-[var(--color-seal-deep)]"
             autoFocus
@@ -136,6 +129,28 @@ export default function SearchPage() {
             {loading ? "Searching…" : "Search"}
           </button>
         </form>
+
+        {/* Voice input row: same baseline-ref pattern as /ask so partials
+            extend the current input rather than overwriting it, and finals
+            commit so the next segment grows from the finalized text. */}
+        <div className="mb-6">
+          <VoiceInputButton
+            onPartialTranscript={(t) => {
+              if (voiceBaselineRef.current === null) {
+                voiceBaselineRef.current = q;
+              }
+              const base = voiceBaselineRef.current;
+              setQ(base + (base.trim() ? " " : "") + t);
+            }}
+            onFinalTranscript={(t) => {
+              const base = voiceBaselineRef.current ?? q;
+              const next = base + (base.trim() ? " " : "") + t;
+              setQ(next);
+              voiceBaselineRef.current = next;
+            }}
+            disabled={loading}
+          />
+        </div>
 
         <div className="flex flex-wrap gap-2 mb-4 text-xs">
           {["summary judgment standard", "landlord tenant retaliation", "weight of the evidence criminal appeal", "Article 78 statute of limitations", "wrongful termination at-will employment"].map((s) => (

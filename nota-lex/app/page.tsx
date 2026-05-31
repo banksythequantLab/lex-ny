@@ -92,35 +92,7 @@ export default function LexLandingPage() {
       </div>
 
       {/* Sticky nav */}
-      <nav className="sticky top-0 z-50 bg-[var(--color-paper)]/85 backdrop-blur border-b border-[var(--color-rule)]/30">
-        <div className="max-w-[1180px] mx-auto flex items-center justify-between px-7 py-3.5">
-          <Link
-            href="/"
-            className="flex items-center gap-3.5 font-[family-name:var(--font-display)] font-semibold text-[22px] tracking-tight"
-          >
-            <span className="seal-badge">§</span>
-            Lex.NY
-          </Link>
-          <ul className="hidden md:flex gap-6 items-center text-sm text-[var(--color-ink-2)] list-none">
-            <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
-            <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
-            <li><Link href="/web-search" className="hover:text-[var(--color-ink)]">Web</Link></li>
-            <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
-            <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
-            <li><Link href="/how-it-works" className="hover:text-[var(--color-ink)]">How it works</Link></li>
-            <li>
-              <Button asChild>
-                <Link href="/ask">Start research →</Link>
-              </Button>
-            </li>
-          </ul>
-          <Button asChild className="md:hidden">
-            <Link href="/ask">Ask →</Link>
-          </Button>
-        </div>
-      </nav>
-
-      {/* Hero */}
+        {/* Hero */}
       <header className="py-14 pb-10">
         <div className="max-w-[1180px] mx-auto px-7 grid lg:grid-cols-[1.25fr_0.85fr] gap-12 items-start">
           <div>
