@@ -1,0 +1,24 @@
+/**
+ * Public API surface for @nota-lawyer/shared.
+ *
+ * Both nota-trademark and nota-copyright consume this package. Import from
+ * the root (`@nota-lawyer/shared`) for everything, or from the named
+ * subpaths (`@nota-lawyer/shared/auth` etc.) when you only want one module.
+ */
+export { UserRoleSchema, UserSchema, type UserRole, type User, FilingKindSchema, FilingStatusSchema, FilingTierSchema, FilingSchema, type FilingKind, type FilingStatus, type FilingTier, type Filing, TrademarkWizardSchema, VisualArtWizardSchema, PhotographsWizardSchema, LiteraryWizardSchema, type TrademarkWizardData, type VisualArtWizardData, type PhotographsWizardData, type LiteraryWizardData, ConflictRiskLevelSchema, ConflictMatchSchema, ConflictReportSchema, type ConflictRiskLevel, type ConflictMatch, type ConflictReport, PaymentKindSchema, PaymentSchema, type PaymentKind, type Payment, ReviewSchema, type Review, GOV_FEES, SERVICE_FEES, COMMON_USPTO_CLASSES, } from "./types.js";
+export { getBrowserClient, getServiceClient, sendMagicLink, getCurrentUser, isStaff, } from "./auth.js";
+export { getStripe, createCounselCheckoutSession, createSwagCheckoutSession, verifyWebhookSignature, extractSessionMetadata, } from "./stripe.js";
+export { getLLMConfig, getLLMClient, chat, chatJSON, chatStream, type LLMProvider, llmUsage, type LlmUsageEntry, } from "./llm.js";
+export { getWebDataClient, BrightDataClient, brightDataUsage, parseGoogleHtmlResults, type WebDataClient, type SerpResult, } from "./bright-data.js";
+export { runConflictSearch, type RunConflictSearchOpts, } from "./conflict-agent.js";
+export { CourtListenerClient, NySenateClient, NycAmLegalScraper, JustiaNyScraper, liveSerpLegalSearch, type CLOpinion, type CLCluster, type CLDocket, type CLPerson, type OpenLegLawInfo, type OpenLegLawDoc, type OpenLegLawTree, type AmLegalNode, type JustiaCase, type JustiaCaseListing, type LiveLegalSource, } from "./scrapers/index.js";
+export { embed, embedBatch, chunkForEmbedding, EMBEDDING_DIMS, EMBEDDING_MODEL, } from "./embeddings.js";
+export { retrieve, answer, answerStream, type OpinionHit, type StatuteHit, type RetrievalResult, type LexAnswer, type AnswerCitation, type AnswerOpts, type StreamEvent, mostCitedDecisions, judgeInfluenceRanking, judgeProfile, citedBy, type CitedDecision, type JudgeInfluence, type JudgeProfile, type CitedByResult, getOpinion, type OpinionDetail, checkBrief, type CiteCheck, type BriefCheckResult, } from "./lex/index.js";
+export { getDriver as getNeo4jDriver, closeDriver as closeNeo4jDriver, isNeo4jConfigured, bootstrapSchema as bootstrapNeo4jSchema, neo4jHealthCheck, syncOpinions as neo4jSyncOpinions, syncStatutes as neo4jSyncStatutes, syncOpinionCitations as neo4jSyncOpinionCitations, syncOpinionApplies as neo4jSyncOpinionApplies, expandViaGraph, getGraphStats, type Neo4jConfig, type OpinionSyncRow as Neo4jOpinionSyncRow, type StatuteSyncRow as Neo4jStatuteSyncRow, type CitationSyncRow as Neo4jCitationSyncRow, type GraphExpansionResult, type Neo4jStats, } from "./graph/index.js";
+export { isAlgoliaConfigured, getAlgoliaAdminClient, getAlgoliaSearchClient, bootstrapIndex as algoliaBootstrapIndex, indexStatutes as algoliaIndexStatutes, clearIndex as algoliaClearIndex, searchStatutes as algoliaSearchStatutes, getAlgoliaStats, algoliaHealthCheck, type AlgoliaConfig, type AlgoliaStatuteRecord, type AlgoliaSearchHit, type AlgoliaSearchResult, type AlgoliaStats, } from "./search/index.js";
+export { consensusDraft, extractMarkers as extractCitationMarkers, isConsensusConfigured, aimlapiHealthCheck, type ConsensusOpts, type ConsensusDraft, type ConsensusResult, } from "./llm-consensus.js";
+export { isCogneeConfigured, cogneeRemember, cogneeRecall, cogneeHealthCheck, getCogneeStats, type CogneeConfig, type CogneeMemoryEntry, type CogneeRecallHit, type CogneeStats, } from "./memory/index.js";
+export { isSpeechmaticsConfigured, getSpeechmaticsConfig, issueTemporaryRTKey, getSpeechmaticsStats, speechmaticsHealthCheck, type SpeechmaticsConfig, type SpeechmaticsStats, } from "./voice/index.js";
+export { isTriggerwareConfigured, triggerwareQuery, triggerwareCreate, triggerwareListTriggers, triggerwarePoll, triggerwareDelete, triggerwareCatalog, triggerwareInstalled, triggerwareInstallConnector, getTriggerwareStats, triggerwareHealthCheck, type TWQueryResult, type TWTrigger, type TWPollResult, type TWConnector, type TriggerwareStats, type TriggerwareConfig, } from "./actions/index.js";
+export { rateLimit, clientIp, rateLimitResponse, type RateLimitOptions, type RateLimitResult, } from "./rate-limit.js";
+//# sourceMappingURL=index.d.ts.map

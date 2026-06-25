@@ -31,6 +31,7 @@ export interface AnswerCitation {
   display: string;                            // 'People v. Smith, 2024 NY Slip Op 12345'
   url: string;
   snippet?: string;                           // short excerpt for the citation card
+  cl_id?: string;                             // CourtListener cluster id -> internal /case/[cl_id]
 }
 
 export interface LexAnswer {
@@ -124,6 +125,7 @@ function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live:
       url: op.cl_id
         ? `https://www.courtlistener.com/opinion/${op.cl_id}/`
         : `https://www.courtlistener.com/`,
+      cl_id: op.cl_id ?? undefined,
       snippet: op.ai_holding || op.ai_summary || undefined,
     });
 

@@ -17,3 +17,22 @@ export {
   type AnswerOpts,
   type StreamEvent,
 } from "./answer.js";
+
+export {
+  mostCitedDecisions,
+  judgeInfluenceRanking,
+  judgeProfile,
+  citedBy,
+  getOpinion,
+  type CitedDecision,
+  type JudgeInfluence,
+  type JudgeProfile,
+  type CitedByResult,
+  type OpinionDetail,
+} from "./analytics.js";
+
+export {
+  checkBrief,
+  type CiteCheck,
+  type BriefCheckResult,
+} from "./citation-check.js";

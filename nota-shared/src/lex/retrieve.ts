@@ -12,6 +12,7 @@
 
 import pg from "pg";
 import { embed } from "../embeddings.js";
+import { pgPassword } from "../aws-rds-auth.js";
 
 let cachedPgPool: pg.Pool | null = null;
 
@@ -20,19 +21,20 @@ function getPgPool(): pg.Pool {
   const host = process.env.PGHOST || "localhost";
   const port = Number(process.env.PGPORT || 5432);
   const user = process.env.PGUSER || "postgres";
-  const password = process.env.PGPASSWORD;
+  const password = pgPassword(host, port, user);
   const database = process.env.PGDATABASE || "lex";
-  if (!password) {
-    throw new Error("PGPASSWORD required for direct pg retrieval");
-  }
   // SSL only for hosted providers (Supabase/RDS/etc) - detect by hostname
   const needsSSL = /\.supabase\.|\.amazonaws\.|\.googleapis\.|\.azure\./.test(host);
   cachedPgPool = new pg.Pool({
     host, port, user, password, database,
     ssl: needsSSL ? { rejectUnauthorized: false } : false,
+    // IVFFlat recall: default ivfflat.probes=1 misses correct neighbors at this
+    // corpus size (verified — CVP 3212 only surfaces at probes>=40). Set it for
+    // every pooled connection. (On Aurora we move to HNSW + hnsw.ef_search.)
+    options: "-c ivfflat.probes=40",
     max: 4,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 8000,
+    connectionTimeoutMillis: 30000,
   });
   return cachedPgPool;
 }
@@ -136,7 +138,14 @@ const QUERY_EXPANSIONS: Array<{ trigger: RegExp; add: string }> = [
   { trigger: /\bpenal\b/i, add: " criminal offense punishment" },
 ];
 
+// Queries that already name a specific section/rule (e.g. "CPLR 3212", "§ 240")
+// should NOT get the generic keyword expansion below — verified that expansion
+// pushes neighboring procedural statutes (CVP 3405, duplicate UDC sections)
+// ahead of cleaner matches. Vague queries still benefit from expansion.
+const SPECIFIC_SECTION = /§\s*\d|\b(?:CPLR|CVP|CPL|PEN|penal|GBL|GBS|RPAPL|RPL|EPTL|VTL|VAT|BCL|BSC|LLC|DRL|DOM|FCA|FCT)\s*\.?\s*\d/i;
+
 function expandQuery(question: string): string {
+  if (SPECIFIC_SECTION.test(question)) return question;
   let expanded = question;
   for (const exp of QUERY_EXPANSIONS) {
     if (exp.trigger.test(question)) {

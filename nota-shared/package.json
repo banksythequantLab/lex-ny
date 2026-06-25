@@ -37,6 +37,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1075.0",
+    "@aws-sdk/rds-signer": "^3.1075.0",
     "@speechmatics/auth": "^0.1.0",
     "@supabase/supabase-js": "^2.45.0",
     "algoliasearch": "^5.52.1",

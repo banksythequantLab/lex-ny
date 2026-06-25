@@ -150,6 +150,21 @@ export {
   type AnswerCitation,
   type AnswerOpts,
   type StreamEvent,
+  // Judge + citation-graph analytics (Aurora-native; replaces Neo4j cited-by)
+  mostCitedDecisions,
+  judgeInfluenceRanking,
+  judgeProfile,
+  citedBy,
+  type CitedDecision,
+  type JudgeInfluence,
+  type JudgeProfile,
+  type CitedByResult,
+  getOpinion,
+  type OpinionDetail,
+  // Brief citation-checker (verify every cite against the corpus)
+  checkBrief,
+  type CiteCheck,
+  type BriefCheckResult,
 } from "./lex/index.js";
 
 // ============================================================

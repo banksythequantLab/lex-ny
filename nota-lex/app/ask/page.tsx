@@ -373,14 +373,23 @@ function SourceCard({ citation }: { citation: AnswerCitation }) {
         <div className="font-[family-name:var(--font-mono)] text-[9.5px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-1">
           {kindLabel}
         </div>
-        <a
-          href={citation.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-[family-name:var(--font-display)] text-lg text-[var(--color-ink)] hover:text-[var(--color-seal-deep)] underline underline-offset-4"
-        >
-          {citation.display}
-        </a>
+        {citation.kind === "opinion" && citation.cl_id ? (
+          <Link
+            href={`/case/${citation.cl_id}`}
+            className="font-[family-name:var(--font-display)] text-lg text-[var(--color-ink)] hover:text-[var(--color-seal-deep)] underline underline-offset-4"
+          >
+            {citation.display}
+          </Link>
+        ) : (
+          <a
+            href={citation.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-[family-name:var(--font-display)] text-lg text-[var(--color-ink)] hover:text-[var(--color-seal-deep)] underline underline-offset-4"
+          >
+            {citation.display}
+          </a>
+        )}
         {citation.snippet && (
           <p className="text-sm text-[var(--color-ink-2)] mt-2 leading-snug">{citation.snippet}</p>
         )}

@@ -6,6 +6,7 @@
  *
  *   LLM_PROVIDER=groq    → Groq cloud, Llama 3.3 70B Versatile (default, recommended for production)
  *   LLM_PROVIDER=ollama  → Local Ollama on Johnson, Qwen3 32B (free dev/test)
+ *   LLM_PROVIDER=bedrock → AWS Bedrock OpenAI-compatible endpoint (Claude Sonnet etc.), API-key auth
  *   LLM_PROVIDER=aimlapi → AI/ML API ($5K hackathon prize partner). Unified gateway to 100+
  *                          models incl. GPT-5/5.1, Claude Opus, Gemini, Mistral, Llama.
  *                          OpenAI-compatible at https://api.aimlapi.com/v1.
@@ -16,8 +17,9 @@
 
 import OpenAI from "openai";
 import { loadFromDisk, appendToDisk } from "./usage-store.js";
+import { bedrockChat, bedrockChatStream } from "./bedrock-converse.js";
 
-export type LLMProvider = "groq" | "ollama" | "aimlapi";
+export type LLMProvider = "groq" | "ollama" | "aimlapi" | "bedrock";
 
 interface LLMConfig {
   provider: LLMProvider;
@@ -64,6 +66,18 @@ export function getLLMConfig(): LLMConfig {
       // Default to a strong general-purpose model. Override with AIMLAPI_MODEL.
       // Catalog: https://docs.aimlapi.com/api-references/service-endpoints/complete-model-list
       model: process.env.AIMLAPI_MODEL || "openai/gpt-5-chat-latest",
+    };
+  }
+
+  if (provider === "bedrock") {
+    // Native Bedrock Converse API for Claude (the OpenAI-compatible /openai/v1
+    // endpoint only serves openai.gpt-oss). Auth is SigV4 via the AWS credential
+    // chain; baseURL/apiKey below are unused for this provider.
+    return {
+      provider: "bedrock",
+      baseURL: "",
+      apiKey: "bedrock",
+      model: process.env.BEDROCK_MODEL || "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
     };
   }
 
@@ -117,8 +131,33 @@ export async function chat(opts: {
   max_tokens?: number;
   response_format?: { type: "json_object" } | { type: "text" };
 }): Promise<OpenAI.Chat.ChatCompletionMessage> {
-  const { client, config } = getLLMClient();
+  const config = getLLMConfig();
   const started = Date.now();
+
+  if (config.provider === "bedrock") {
+    try {
+      const content = await bedrockChat({
+        system: opts.system,
+        messages: opts.messages,
+        temperature: opts.temperature ?? 0.2,
+        max_tokens: opts.max_tokens ?? 4096,
+        model: config.model,
+      });
+      llmUsage.record({
+        timestamp: new Date().toISOString(), provider: config.provider, model: config.model,
+        mode: "chat", status: "success", duration_ms: Date.now() - started,
+      });
+      return { role: "assistant", content, refusal: null } as OpenAI.Chat.ChatCompletionMessage;
+    } catch (e) {
+      llmUsage.record({
+        timestamp: new Date().toISOString(), provider: config.provider, model: config.model,
+        mode: "chat", status: "error", duration_ms: Date.now() - started, error: (e as Error).message,
+      });
+      throw e;
+    }
+  }
+
+  const { client } = getLLMClient();
 
   try {
     const completion = await client.chat.completions.create({
@@ -248,9 +287,38 @@ export async function* chatStream(opts: {
   temperature?: number;
   max_tokens?: number;
 }): AsyncGenerator<string, void, unknown> {
-  const { client, config } = getLLMClient();
+  const config = getLLMConfig();
   const started = Date.now();
   let charsOut = 0;
+
+  if (config.provider === "bedrock") {
+    try {
+      for await (const delta of bedrockChatStream({
+        system: opts.system,
+        messages: opts.messages,
+        temperature: opts.temperature ?? 0.2,
+        max_tokens: opts.max_tokens ?? 4096,
+        model: config.model,
+      })) {
+        charsOut += delta.length;
+        yield delta;
+      }
+      llmUsage.record({
+        timestamp: new Date().toISOString(), provider: config.provider, model: config.model,
+        mode: "stream", status: "success", duration_ms: Date.now() - started,
+        completion_tokens: Math.round(charsOut / 4),
+      });
+    } catch (e) {
+      llmUsage.record({
+        timestamp: new Date().toISOString(), provider: config.provider, model: config.model,
+        mode: "stream", status: "error", duration_ms: Date.now() - started, error: (e as Error).message,
+      });
+      throw e;
+    }
+    return;
+  }
+
+  const { client } = getLLMClient();
 
   try {
     const stream = await client.chat.completions.create({

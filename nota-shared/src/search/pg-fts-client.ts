@@ -18,6 +18,7 @@
  */
 
 import { Pool } from "pg";
+import { pgPassword, isRdsHost } from "../aws-rds-auth.js";
 
 /* ------------------------------------------------------------------ */
 /*  Pool lifecycle                                                     */
@@ -27,15 +28,17 @@ let pool: Pool | null = null;
 
 function getPool(): Pool {
   if (pool) return pool;
+  const host = process.env.PGHOST || "localhost";
+  const port = parseInt(process.env.PGPORT || "5432", 10);
+  const user = process.env.PGUSER || "postgres";
   pool = new Pool({
-    host: process.env.PGHOST || "localhost",
-    user: process.env.PGUSER || "postgres",
-    password: process.env.PGPASSWORD,
+    host, port, user,
+    password: pgPassword(host, port, user),
     database: process.env.PGDATABASE || "lex",
-    port: parseInt(process.env.PGPORT || "5432", 10),
+    ssl: isRdsHost(host) ? { rejectUnauthorized: false } : false,
     max: 10,
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
+    connectionTimeoutMillis: 30_000,
   });
   return pool;
 }

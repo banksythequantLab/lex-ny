@@ -1,0 +1,76 @@
+/**
+ * Public API surface for @nota-lawyer/shared.
+ *
+ * Both nota-trademark and nota-copyright consume this package. Import from
+ * the root (`@nota-lawyer/shared`) for everything, or from the named
+ * subpaths (`@nota-lawyer/shared/auth` etc.) when you only want one module.
+ */
+// Types — Zod schemas + inferred TS types + fee constants
+export { 
+// User
+UserRoleSchema, UserSchema, 
+// Filing
+FilingKindSchema, FilingStatusSchema, FilingTierSchema, FilingSchema, 
+// Per-kind wizard data
+TrademarkWizardSchema, VisualArtWizardSchema, PhotographsWizardSchema, LiteraryWizardSchema, 
+// Conflict report
+ConflictRiskLevelSchema, ConflictMatchSchema, ConflictReportSchema, 
+// Payment
+PaymentKindSchema, PaymentSchema, 
+// Review
+ReviewSchema, 
+// Constants
+GOV_FEES, SERVICE_FEES, COMMON_USPTO_CLASSES, } from "./types.js";
+// Auth
+export { getBrowserClient, getServiceClient, sendMagicLink, getCurrentUser, isStaff, } from "./auth.js";
+// Stripe
+export { getStripe, createCounselCheckoutSession, createSwagCheckoutSession, verifyWebhookSignature, extractSessionMetadata, } from "./stripe.js";
+// LLM
+export { getLLMConfig, getLLMClient, chat, chatJSON, chatStream, llmUsage, } from "./llm.js";
+// Web data client — Bright Data Web Unlocker + SERP integration.
+// All BD usage is tracked in brightDataUsage for /api/bright-data-stats.
+export { getWebDataClient, BrightDataClient, brightDataUsage, parseGoogleHtmlResults, } from "./bright-data.js";
+// Conflict Search Agent - the Bright Data hackathon centerpiece
+export { runConflictSearch, } from "./conflict-agent.js";
+// ============================================================
+//  Lex.NY - NY law research engine
+// ============================================================
+// Scrapers (case law + statutes ingestion)
+export { CourtListenerClient, NySenateClient, NycAmLegalScraper, JustiaNyScraper, liveSerpLegalSearch, } from "./scrapers/index.js";
+// Embeddings
+export { embed, embedBatch, chunkForEmbedding, EMBEDDING_DIMS, EMBEDDING_MODEL, } from "./embeddings.js";
+// Retrieval + RAG answer generation
+export { retrieve, answer, answerStream, 
+// Judge + citation-graph analytics (Aurora-native; replaces Neo4j cited-by)
+mostCitedDecisions, judgeInfluenceRanking, judgeProfile, citedBy, getOpinion, 
+// Brief citation-checker (verify every cite against the corpus)
+checkBrief, } from "./lex/index.js";
+// ============================================================
+//  Neo4j citation graph (HackerNoon Proof of Usefulness sponsor)
+// ============================================================
+export { getDriver as getNeo4jDriver, closeDriver as closeNeo4jDriver, isNeo4jConfigured, bootstrapSchema as bootstrapNeo4jSchema, neo4jHealthCheck, syncOpinions as neo4jSyncOpinions, syncStatutes as neo4jSyncStatutes, syncOpinionCitations as neo4jSyncOpinionCitations, syncOpinionApplies as neo4jSyncOpinionApplies, expandViaGraph, getGraphStats, } from "./graph/index.js";
+// ============================================================
+//  Algolia federated search (HackerNoon Proof of Usefulness sponsor)
+// ============================================================
+export { isAlgoliaConfigured, getAlgoliaAdminClient, getAlgoliaSearchClient, bootstrapIndex as algoliaBootstrapIndex, indexStatutes as algoliaIndexStatutes, clearIndex as algoliaClearIndex, searchStatutes as algoliaSearchStatutes, getAlgoliaStats, algoliaHealthCheck, } from "./search/index.js";
+// ============================================================
+//  AI/ML API multi-model consensus (Bright Data UNLOCKED partner —  prize)
+// ============================================================
+export { consensusDraft, extractMarkers as extractCitationMarkers, isConsensusConfigured, aimlapiHealthCheck, } from "./llm-consensus.js";
+// ============================================================
+//  Cognee agent memory (Bright Data UNLOCKED partner — $2,400 + $500 prize)
+// ============================================================
+export { isCogneeConfigured, cogneeRemember, cogneeRecall, cogneeHealthCheck, getCogneeStats, } from "./memory/index.js";
+// ============================================================
+//  Speechmatics voice (STUB — Bright Data UNLOCKED partner, first 100 get $200 credits)
+// ============================================================
+export { isSpeechmaticsConfigured, getSpeechmaticsConfig, issueTemporaryRTKey, getSpeechmaticsStats, speechmaticsHealthCheck, } from "./voice/index.js";
+// ============================================================
+//  Triggerware workflow actions (STUB — Bright Data UNLOCKED partner)
+// ============================================================
+export { isTriggerwareConfigured, triggerwareQuery, triggerwareCreate, triggerwareListTriggers, triggerwarePoll, triggerwareDelete, triggerwareCatalog, triggerwareInstalled, triggerwareInstallConnector, getTriggerwareStats, triggerwareHealthCheck, } from "./actions/index.js";
+// ============================================================
+//  Rate limiting (in-memory token bucket, single-node)
+// ============================================================
+export { rateLimit, clientIp, rateLimitResponse, } from "./rate-limit.js";
+//# sourceMappingURL=index.js.map
