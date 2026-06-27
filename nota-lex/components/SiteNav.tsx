@@ -18,11 +18,8 @@ const NAV_ITEMS = [
   { href: "/ask", label: "Ask" },
   { href: "/search", label: "Search" },
   { href: "/check", label: "Check" },
-  { href: "/web-search", label: "Web" },
-  { href: "/corpus", label: "Corpus" },
   { href: "/stats", label: "Stats" },
   { href: "/judges", label: "Judges" },
-  { href: "/watches", label: "Watches" },
 ] as const;
 
 function isActive(pathname: string, href: string) {

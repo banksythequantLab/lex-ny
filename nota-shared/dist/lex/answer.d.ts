@@ -22,6 +22,7 @@ export interface AnswerCitation {
     url: string;
     snippet?: string;
     cl_id?: string;
+    bluebook?: string;
 }
 export interface LexAnswer {
     question: string;

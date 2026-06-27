@@ -32,6 +32,7 @@ export interface AnswerCitation {
   url: string;
   snippet?: string;                           // short excerpt for the citation card
   cl_id?: string;                             // CourtListener cluster id -> internal /case/[cl_id]
+  bluebook?: string;                          // NY Bluebook-style cite, e.g. "People v. Smith, 33 N.Y.2d 144 (1973)"
 }
 
 export interface LexAnswer {
@@ -95,7 +96,7 @@ You are NOT a lawyer and you do NOT give legal advice. You provide research, ana
 
 RULES:
 
-1. CITATIONS ARE MANDATORY. Every factual claim about New York law MUST be followed by a numbered marker [1], [2], etc. that points to a source provided in the CONTEXT block. NEVER invent a citation. NEVER reference a case or statute that isn't in the CONTEXT.
+1. CITATIONS ARE MANDATORY. Every factual claim about New York law MUST be followed by one or more numbered markers [1], [2], etc. that point to sources provided in the CONTEXT block. When more than one source supports a point, cite them together (e.g., [1][2]). NEVER invent a citation. NEVER reference a case or statute that isn't in the CONTEXT.
 
 2. IF THE CONTEXT DOESN'T COVER IT, SAY SO. If the user asks something the provided sources don't answer, respond with: "The Lex.NY corpus doesn't cover this directly. Based on what I do have: [your best partial answer with markers]. For a definitive answer, consult a NY-licensed attorney." Do not pad with confident-sounding but unsupported claims.
 
@@ -103,9 +104,42 @@ RULES:
 
 4. STRUCTURE. Answer in 2-5 short paragraphs of plain prose, suitable for a non-lawyer to read. Lead with the bottom line, then explain. Use markdown for emphasis only when it helps comprehension.
 
-5. ANCHOR CASES TO HOLDINGS. When you cite a case, briefly state what the case held, in your own words, then provide the marker.
+5. ANCHOR CLAIMS TO HOLDINGS. State the rule or holding in your own words, then place the [n] marker for the source it comes from. You do not need to name the case in your prose — the citation is inserted at the marker.
 
-6. NO ADVICE LANGUAGE. Never use the phrases "I recommend", "you should", or "the best course of action is". Use neutral research language: "The cases hold...", "Under NY law...", "Section X provides...".`;
+6. NO ADVICE LANGUAGE. Never use the phrases "I recommend", "you should", or "the best course of action is". Use neutral research language: "The cases hold...", "Under NY law...", "Section X provides...".
+
+7. CITATIONS RENDER AUTOMATICALLY. Place the [n] marker immediately after the claim it supports. The full New York Bluebook citation is inserted at each marker automatically, so do NOT spell out case names, reporter citations, or section numbers in your prose — just write the legal substance and the marker. Where two or more sources support the same point, place their markers together, e.g. [1][2].`;
+
+// --- NY Bluebook-style citation formatting -------------------------------
+const NY_COURT_ABBR: Record<string, string> = {
+  ny: "N.Y.", nyappdiv: "App. Div.", nyappterm: "App. Term", nysupct: "Sup. Ct.",
+  nysurct: "Sur. Ct.", nyfamct: "Fam. Ct.", nycrimct: "Crim. Ct.", nycivct: "Civ. Ct.",
+  nycountyct: "County Ct.", nyclaimsct: "Ct. Cl.", nyjustct: "Just. Ct.",
+  nysd: "S.D.N.Y.", nyed: "E.D.N.Y.", nynd: "N.D.N.Y.", nywd: "W.D.N.Y.", ca2: "2d Cir.",
+};
+function yearOf(d?: string | null): string {
+  if (!d) return "";
+  const s = String(d);
+  // ISO "YYYY-MM-DD" → leading 4 digits; JS Date string ("Fri Nov 13 1908 ...") → find the year.
+  const iso = s.match(/^(\d{4})-/);
+  if (iso) return iso[1];
+  const m = s.match(/\b(1[6-9]\d{2}|20\d{2})\b/);
+  return m ? m[1] : "";
+}
+function bluebookOpinion(o: { case_name: string; citation?: string | null; court_id?: string; decision_date?: string | null }): string {
+  const year = yearOf(o.decision_date);
+  const court = o.court_id ? NY_COURT_ABBR[o.court_id] || "" : "";
+  if (o.citation) {
+    // The N.Y. reporter (Court of Appeals) already implies the court, so only the year.
+    const paren = o.court_id === "ny" ? year : [court, year].filter(Boolean).join(" ");
+    return paren ? `${o.case_name}, ${o.citation} (${paren})` : `${o.case_name}, ${o.citation}`;
+  }
+  const paren = [court, year].filter(Boolean).join(" ");
+  return paren ? `${o.case_name} (${paren})` : o.case_name;
+}
+function bluebookStatute(s: { law_name: string; location_id: string }): string {
+  return `N.Y. ${s.law_name} § ${s.location_id} (McKinney)`;
+}
 
 function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live: LiveLegalSource[], graphRelated: Array<{ citation_key: string; title: string; law_name: string; law_id: string; location_id: string; text: string; co_citations: number }> = []): {
   block: string;
@@ -116,11 +150,13 @@ function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live:
   let marker = 1;
 
   for (const op of opinions) {
+    const bb = bluebookOpinion(op);
     citations.push({
       marker,
       kind: "opinion",
       id: op.opinion_id,
-      display: op.citation ? `${op.case_name}, ${op.citation}` : op.case_name,
+      display: bb,
+      bluebook: bb,
       // CourtListener URLs use the cluster ID (cl_id), not the Postgres UUID.
       url: op.cl_id
         ? `https://www.courtlistener.com/opinion/${op.cl_id}/`
@@ -131,6 +167,7 @@ function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live:
 
     lines.push(
       `[${marker}] OPINION: ${op.case_name}`,
+      `    Cite (Bluebook): ${bb}`,
       `    Court: ${op.court_id}    Date: ${op.decision_date}    Citation: ${op.citation || "(none)"}`,
       `    Holding: ${op.ai_holding || "(not yet summarized)"}`,
       `    Summary: ${op.ai_summary || "(not yet summarized)"}`,
@@ -140,19 +177,22 @@ function buildContextBlock(opinions: OpinionHit[], statutes: StatuteHit[], live:
   }
 
   for (const st of statutes) {
+    const bbSt = bluebookStatute(st);
     citations.push({
       marker,
       kind: "statute",
       id: st.statute_id,
-      display: `${st.law_name} ${st.location_id}`,
+      display: bbSt,
+      bluebook: bbSt,
       url: `https://www.nysenate.gov/legislation/laws/${st.law_id}/${st.location_id}`,
       snippet: st.title,
     });
 
     lines.push(
       `[${marker}] STATUTE: ${st.law_name} ${st.location_id} (${st.doc_type})`,
+      `    Cite (Bluebook): ${bbSt}`,
       `    Title: ${st.title}`,
-      `    Text: ${(st.text || "").slice(0, 1500)}${(st.text || "").length > 1500 ? "..." : ""}`,
+      `    Text: ${(st.text || "").slice(0, 700)}${(st.text || "").length > 700 ? "..." : ""}`,
       ""
     );
     marker++;
@@ -223,7 +263,7 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
   }
 
   // Step 1: retrieve from static corpus
-  const retrieval = await retrieve(question, { limit: 10 });
+  const retrieval = await retrieve(question, { limit: 6 });
 
   // Step 1.5: compute the best raw vector similarity across opinions + statutes.
   // This is the confidence signal. cosine in pgvector returns [-1, 1] but for
@@ -509,7 +549,7 @@ export async function answer(question: string, opts: AnswerOpts = {}): Promise<L
 const STANDARD_DISCLAIMER =
   "Lex.NY is a research tool, not legal advice. It is supervised by a NY-licensed attorney but does not create an attorney-client relationship. " +
   "For binding advice on a specific situation, engage Nota.Lawyer's Counsel tier ($50) or another qualified NY attorney. " +
-  "Always verify citations against the underlying source before relying on them.";
+  "Every citation comes from a real New York opinion or statute, but the legal interpretation is not guaranteed correct.";
 
 
 /* ------------------------------------------------------------------ */
@@ -542,7 +582,7 @@ export async function* answerStream(
   const start = Date.now();
   try {
     // Step 1: retrieve from static corpus
-    const retrieval = await retrieve(question, { limit: 10 });
+    const retrieval = await retrieve(question, { limit: 6 });
 
     // Step 1.5: same similarity-floor logic as answer() — compute the best
     // raw vector match and decide whether the retrieval is too weak to bother
@@ -639,7 +679,7 @@ export async function* answerStream(
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
       temperature: 0.2,
-      max_tokens: 4096,
+      max_tokens: 1500,
     })) {
       yield { type: "delta", text: delta };
     }

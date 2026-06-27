@@ -1,184 +1,220 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Nota.Lawyer — editorial design tokens
-   Same palette + typography as the static HTML landing pages.
-   Tailwind v4 lets us define tokens as CSS variables in @theme.
+   Lex.NY — "Law Office" design tokens
+   Matched to the Law Office of Derek J. Soltis brand
+   (28usc1782.com): deep navy + muted gold on a soft light
+   ground, Source Serif 4 headings + Inter body.
    ============================================================ */
 
 @theme {
-  /* Palette */
-  --color-paper: #f3ece0;
-  --color-paper-2: #ebe2d1;
-  --color-paper-3: #e1d5be;
-  --color-ink: #0e0d0a;
-  --color-ink-2: #3c352b;
-  --color-rule: #1c1a16;
-  --color-seal: #a23a2c;
-  --color-seal-deep: #7d2a1f;
-  --color-gold: #b8923f;
-  --color-gold-deep: #8c6a26;
-  --color-green: #3d6041;
+  /* Surfaces (semantic "paper" kept so existing classes cascade) */
+  --color-paper: #f6f8fb;     /* page ground — soft blue-gray */
+  --color-paper-2: #ffffff;   /* white sections / cards */
+  --color-paper-3: #eef2f7;   /* tinted wells */
+
+  /* Text ("ink") */
+  --color-ink: #1a2740;       /* primary body text */
+  --color-ink-2: #4a5a72;     /* secondary / slate */
+  --color-rule: #0b1f3a;      /* border base — used at low opacity */
+
+  /* Brand */
+  --color-navy: #0b1f3a;
+  --color-navy-2: #11294b;
+  --color-steel: #3b5275;
+  --color-line: #e4e9f1;
+
+  /* Accents — muted gold = the firm accent */
+  --color-seal: #b5894e;      /* primary accent (gold) */
+  --color-seal-deep: #9c7338; /* deeper gold for emphasis */
+  --color-gold: #caa468;
+  --color-gold-deep: #9c7338;
+  --color-green: #1f7a4d;     /* "verified / ok" */
+  --color-tech: #3b5275;      /* steel-blue secondary */
 
   /* Typography */
-  --font-display: "Fraunces", "Times New Roman", serif;
-  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Inter", system-ui, sans-serif;
 
-  /* Risk level colors for ConflictReport */
-  --color-risk-clear: #3d6041;
-  --color-risk-low: #6a8c4a;
-  --color-risk-moderate: #b8923f;
-  --color-risk-high: #c75a3b;
-  --color-risk-blocking: #7d2a1f;
+  /* Risk colors (other pages) */
+  --color-risk-clear: #1f7a4d;
+  --color-risk-low: #6fae6a;
+  --color-risk-moderate: #b5894e;
+  --color-risk-high: #c2703a;
+  --color-risk-blocking: #9a3324;
 }
 
 /* ============================================================
    Base
    ============================================================ */
 
-html, body {
-  background: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-}
+@layer base {
+  html {
+    font-size: 17px; /* slightly larger base — scales all rem-based type */
+  }
+  html, body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-body {
-  background-image:
-    radial-gradient(rgba(14, 13, 10, 0.045) 1px, transparent 1px),
-    radial-gradient(rgba(14, 13, 10, 0.025) 1px, transparent 1px);
-  background-size: 3px 3px, 7px 7px;
-  background-position: 0 0, 1px 2px;
-}
+  /* Authoritative serif headings, navy by default — utilities (text-white,
+     text-[color]) still override because these live in @layer base. */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    color: var(--color-navy);
+    letter-spacing: -0.01em;
+  }
 
-/* Display headings default to Fraunces */
-h1, h2, h3 {
-  font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  ::selection { background: rgba(181, 137, 78, 0.22); color: var(--color-navy); }
+  a { text-underline-offset: 3px; }
 }
 
 /* ============================================================
-   Component-level utility classes
-   Used across the wizard, dashboard, and landing pages.
+   Component utility classes — law-office light theme
    ============================================================ */
 
+/* Top "attorney advertising"–style strip */
 .editorial-caption {
-  background: var(--color-ink);
-  color: var(--color-paper);
-  font-family: var(--font-mono);
+  background: var(--color-navy);
+  color: rgba(255, 255, 255, 0.82);
+  font-family: var(--font-sans);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .editorial-eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
-  letter-spacing: 0.22em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-seal-deep);
 }
 
 .editorial-eyebrow::before {
   content: "§";
-  color: var(--color-gold);
+  color: var(--color-seal);
   margin-right: 6px;
 }
 
+/* Brass § medallion on navy */
 .seal-badge {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
-  background: var(--color-seal);
-  color: var(--color-paper);
+  border-radius: 4px;
+  background: var(--color-navy);
+  color: var(--color-gold);
   display: grid;
   place-items: center;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  box-shadow: inset 0 0 0 2px var(--color-paper), 0 0 0 1px var(--color-seal-deep);
+  font-size: 16px;
+  box-shadow: inset 0 0 0 1px rgba(202, 164, 104, 0.5);
 }
 
-/* Form inputs styled to match the editorial look */
+/* White card with hairline border + soft lift on hover */
+.lib-card {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.lib-card:hover {
+  border-color: rgba(181, 137, 78, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(11, 31, 58, 0.10);
+}
+
+.lib-rule {
+  height: 1px;
+  background: var(--color-line);
+  border: 0;
+}
+
+/* Inputs */
 .editorial-input {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid var(--color-rule);
-  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  background: var(--color-paper-2);
   font-family: var(--font-sans);
   font-size: 15px;
   color: var(--color-ink);
-  border-radius: 2px;
+  border-radius: 4px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 .editorial-input:focus {
   border-color: var(--color-seal);
-  box-shadow: 0 0 0 3px rgba(162, 58, 44, 0.12);
+  box-shadow: 0 0 0 3px rgba(181, 137, 78, 0.14);
 }
 
 .editorial-label {
   display: block;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 10px;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-ink-2);
   margin-bottom: 6px;
 }
 
+/* Primary action — navy, authoritative */
 .editorial-button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 18px;
-  background: var(--color-ink);
-  color: var(--color-paper);
+  padding: 12px 20px;
+  background: var(--color-navy);
+  color: #ffffff;
   font-family: var(--font-sans);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
   letter-spacing: 0.01em;
-  border: 1px solid var(--color-ink);
-  border-radius: 2px;
+  border: 1px solid var(--color-navy);
+  border-radius: 4px;
   cursor: pointer;
-  transition: transform 0.15s, background 0.2s;
+  transition: background 0.18s, transform 0.15s, box-shadow 0.2s;
 }
-
 .editorial-button:hover {
-  background: var(--color-seal);
-  border-color: var(--color-seal);
+  background: var(--color-navy-2);
   transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(11, 31, 58, 0.18);
 }
 
+/* Ghost / secondary — gold outline */
 .editorial-button.ghost {
   background: transparent;
-  color: var(--color-ink);
+  color: var(--color-navy);
+  border-color: var(--color-line);
 }
-
 .editorial-button.ghost:hover {
-  background: var(--color-ink);
-  color: var(--color-paper);
+  background: #fff;
+  border-color: var(--color-seal);
+  box-shadow: none;
 }
 
-/* Risk badges for ConflictReport */
+/* Risk badges */
 .risk-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border-radius: 2px;
+  border-radius: 4px;
 }
-
-.risk-badge.clear { background: var(--color-risk-clear); color: white; }
-.risk-badge.low { background: var(--color-risk-low); color: white; }
-.risk-badge.moderate { background: var(--color-risk-moderate); color: white; }
-.risk-badge.high { background: var(--color-risk-high); color: white; }
-.risk-badge.blocking { background: var(--color-risk-blocking); color: white; }
+.risk-badge.clear { background: var(--color-risk-clear); color: #fff; }
+.risk-badge.low { background: var(--color-risk-low); color: #fff; }
+.risk-badge.moderate { background: var(--color-risk-moderate); color: #fff; }
+.risk-badge.high { background: var(--color-risk-high); color: #fff; }
+.risk-badge.blocking { background: var(--color-risk-blocking); color: #fff; }

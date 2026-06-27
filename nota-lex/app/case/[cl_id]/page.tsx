@@ -48,10 +48,10 @@ export default async function CasePage({ params }: { params: Promise<{ cl_id: st
 
       <div className="max-w-[1180px] mx-auto px-7 py-10">
         <h1 className="font-[family-name:var(--font-display)] text-4xl mb-2">{op.case_name}</h1>
-        <div className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--color-ink-2)] mb-1">
+        <div className="font-[family-name:var(--font-mono)] text-[18px] text-[var(--color-ink-2)] mb-1">
           {court(op.court_id)} · {op.decision_date || "date n/a"}{op.citation ? ` · ${op.citation}` : ""}
         </div>
-        <div className="font-[family-name:var(--font-mono)] text-[12px] mb-6">
+        <div className="font-[family-name:var(--font-mono)] text-[18px] mb-6">
           <span className="text-[var(--color-seal-deep)]">cited {op.inbound.toLocaleString()}×</span>
           {op.cl_id && <> · <a className="text-[var(--color-ink-2)] underline" href={`https://www.courtlistener.com/opinion/${op.cl_id}/`} target="_blank" rel="noopener noreferrer">CourtListener ↗</a></>}
         </div>
@@ -60,11 +60,11 @@ export default async function CasePage({ params }: { params: Promise<{ cl_id: st
           <article className="md:col-span-2">
             {op.ai_summary && (
               <div className="mb-5 p-4 rounded-sm border border-[var(--color-rule)]/30 bg-[var(--color-paper-2)]">
-                <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-1.5">AI summary</div>
+                <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] mb-1.5">AI summary</div>
                 <p className="text-sm leading-relaxed m-0">{op.ai_summary}</p>
               </div>
             )}
-            <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">Opinion text</div>
+            <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">Opinion text</div>
             {op.text
               ? <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap max-h-[70vh] overflow-auto border border-[var(--color-rule)]/20 rounded-sm p-4 bg-[var(--color-paper-2)]/40">{op.text}</div>
               : <p className="text-sm text-[var(--color-ink-2)]">Full text not yet loaded for this opinion (re-embed in progress). The citation graph + metadata above are live.</p>}

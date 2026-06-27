@@ -6,7 +6,7 @@ import "./globals.css";
 const SITE_URL = "https://iam.nota.lawyer";
 const SITE_TITLE = "Lex.NY — New York legal research, citation-anchored";
 const SITE_DESCRIPTION =
-  "A research engine for New York law. 5.5 million records, a 6.95 million-edge citation graph, every claim tied to a real source. Supervised by a NY-licensed attorney. Not legal advice.";
+  "A research engine for New York law, built on AWS. 1.32M opinions and all 137 NY Consolidated Laws in Aurora PostgreSQL, answered by a fast hosted model under a strict-citation prompt with every claim tied to a real source. Supervised by a NY-licensed attorney. Not legal advice.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     "New York law",
     "legal research",
     "citation graph",
-    "GraphRAG",
     "NY case law",
     "NY statutes",
     "Court of Appeals",
@@ -45,7 +44,7 @@ export const metadata: Metadata = {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Lex.NY — Every case. Every statute. Every cite verifiable. 5.5M records, 6.95M graph edges, 1714 to 2026.",
+        alt: "Lex.NY — Every case. Every statute. Every cite verifiable. 1.32M NY opinions on AWS Aurora PostgreSQL, 1714 to 2026.",
         type: "image/svg+xml",
       },
     ],
@@ -76,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
@@ -101,39 +100,39 @@ function Footer() {
             New York legal research engine. Every case, every statute, every cite
             verifiable. Supervised by a NY-licensed attorney.
           </p>
-          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+          <p className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase">
             Open source · Apache-2.0
           </p>
         </div>
 
         <div>
-          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink)] mb-3">
+          <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink)] mb-3">
             Pages
           </div>
           <ul className="space-y-1.5 list-none p-0">
             <li><Link href="/" className="hover:text-[var(--color-ink)]">Home</Link></li>
             <li><Link href="/ask" className="hover:text-[var(--color-ink)]">Ask</Link></li>
             <li><Link href="/search" className="hover:text-[var(--color-ink)]">Search</Link></li>
-              <li><Link href="/web-search" className="hover:text-[var(--color-ink)]">Web search</Link></li>
-            <li><Link href="/watches" className="hover:text-[var(--color-ink)]">Watches</Link></li>
             <li><Link href="/stats" className="hover:text-[var(--color-ink)]">Stats</Link></li>
             <li><Link href="/about" className="hover:text-[var(--color-ink)]">About</Link></li>
           </ul>
         </div>
 
         <div>
-          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink)] mb-3">
-            This is not legal advice
+          <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink)] mb-3">
+            Experimental — not legal advice
           </div>
           <p className="mb-3">
-            Lex.NY is a research tool. Using it does not create an attorney-client
-            relationship. For binding advice on a specific situation, engage a
-            qualified NY attorney.
+            Lex.NY is an <strong>experimental</strong> research tool and is <strong>not a
+            substitute for a licensed attorney</strong>. Using it does not create an
+            attorney-client relationship. Do not rely on it for legal decisions — consult a
+            qualified NY attorney. Every citation is from a real source, but the legal
+            interpretation is not guaranteed correct.
           </p>
-          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase mb-3">
+          <p className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase mb-3">
             NY RPC 7.1 · Supervised
           </p>
-          <p className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+          <p className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase">
             <Link href="/terms" className="hover:text-[var(--color-ink)] underline underline-offset-2">Terms</Link>
             {" · "}
             <Link href="/privacy" className="hover:text-[var(--color-ink)] underline underline-offset-2">Privacy</Link>
@@ -144,7 +143,7 @@ function Footer() {
       <div className="border-t border-[var(--color-rule)]/30">
         <div className="max-w-[1180px] mx-auto px-7 py-4 flex flex-wrap justify-between items-center gap-3 text-xs text-[var(--color-ink-2)]">
           <span></span>
-          <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase">
+          <span className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase">
             <a
               href="https://github.com/banksythequantLab/lex-ny"
               target="_blank"

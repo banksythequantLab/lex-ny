@@ -84,7 +84,7 @@ export default function CheckPage() {
             {loading ? "Checking…" : "Check citations"}
           </button>
           {result && (
-            <span className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
+            <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
               {result.summary.total} cites &middot; <span className="text-green-700">{result.summary.verified} verified</span>
               {result.summary.weak_match > 0 && <> &middot; <span className="text-amber-700">{result.summary.weak_match} weak</span></>}
               {result.summary.not_found > 0 && <> &middot; <span className="text-red-700">{result.summary.not_found} not found</span></>}
@@ -105,7 +105,7 @@ export default function CheckPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={"font-[family-name:var(--font-mono)] text-[9.5px] tracking-wider uppercase px-1.5 py-0.5 rounded-full " + s.chip}>{s.label}</span>
-                        <span className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-wider text-[var(--color-ink-2)]">{c.kind}</span>
+                        <span className="font-[family-name:var(--font-mono)] text-[15px] uppercase tracking-wider text-[var(--color-ink-2)]">{c.kind}</span>
                       </div>
                       <div className="font-[family-name:var(--font-display)] text-[15px]">&ldquo;{c.raw}&rdquo;</div>
                       {c.matched && (
@@ -119,13 +119,13 @@ export default function CheckPage() {
                     </div>
                     <div className="shrink-0 text-right space-y-0.5">
                       {typeof c.inbound === "number" && c.status !== "not_found" && (
-                        <div className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-seal-deep)]">cited {c.inbound.toLocaleString()}×</div>
+                        <div className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-seal-deep)]">cited {c.inbound.toLocaleString()}×</div>
                       )}
                       {c.kind === "case" && c.cl_id && (
-                        <div><Link href={`/case/${c.cl_id}`} className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-wider text-[var(--color-seal-deep)] hover:underline">read →</Link></div>
+                        <div><Link href={`/case/${c.cl_id}`} className="font-[family-name:var(--font-mono)] text-[15px] uppercase tracking-wider text-[var(--color-seal-deep)] hover:underline">read →</Link></div>
                       )}
                       {c.url && (
-                        <a href={c.url} target="_blank" rel="noopener noreferrer" className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-wider text-[var(--color-ink-2)] hover:text-[var(--color-ink)]">source ↗</a>
+                        <a href={c.url} target="_blank" rel="noopener noreferrer" className="font-[family-name:var(--font-mono)] text-[15px] uppercase tracking-wider text-[var(--color-ink-2)] hover:text-[var(--color-ink)]">source ↗</a>
                       )}
                     </div>
                   </div>

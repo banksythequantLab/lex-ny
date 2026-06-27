@@ -45,7 +45,6 @@ export default function PrivacyPage() {
           <li>The IP address of the requester, for rate limiting (10 req/min on /api/ask, 5 req/min on /api/ask/stream).</li>
           <li>The question text and the answer text, in standard application logs.</li>
           <li>Timing and token-count metrics for each LLM call (see <Link href="/stats" className="text-[var(--color-seal-deep)] underline">/stats</Link> and <code className="font-[family-name:var(--font-mono)] bg-[var(--color-rule)]/15 px-1 rounded">/api/llm-stats</code>).</li>
-          <li>Timing, status, and operation type for each Bright Data web fetch (see <code className="font-[family-name:var(--font-mono)] bg-[var(--color-rule)]/15 px-1 rounded">/api/bright-data-stats</code>).</li>
         </ul>
         <p className="leading-relaxed mb-4">
           These logs are kept on the workstation hosting Lex.NY for
@@ -74,28 +73,19 @@ export default function PrivacyPage() {
         <div className="border border-[var(--color-rule)]/30 rounded-sm bg-[var(--color-paper-2)] p-6 mb-4">
           <ul className="leading-relaxed space-y-3 text-sm">
             <li>
-              <strong>Groq</strong> - receives the embedded question plus the retrieval context block as the LLM prompt. Used to draft the answer.
+              <strong>AWS (Aurora PostgreSQL)</strong> - stores and queries the NY corpus. Receives the IDs of retrieved opinions and statutes for pgvector semantic search, Postgres full-text search, and the citation graph (recursive CTEs over CITES / APPLIES edges). Retrieval is corpus-only.
             </li>
             <li>
-              <strong>Bright Data</strong> - issues SERP queries to Google for parts of your question, and fetches the top result URLs through Web Unlocker. The query text is sent as a Google search string.
+              <strong>The embedding model (mxbai-embed-large, 1024-d)</strong> - receives your question text to compute the query vector used for semantic retrieval.
             </li>
             <li>
-              <strong>Neo4j AuraDB</strong> - receives the IDs of opinions retrieved from the corpus, to traverse the citation graph. Does not receive raw user text.
+              <strong>The hosted drafting model</strong> - a fast hosted model that receives the embedded question plus the retrieval context block as the prompt, under a strict-citation system prompt. Used to draft the answer.
             </li>
             <li>
-              <strong>Algolia</strong> - receives keyword search terms when you use the /search page or when /api/ask runs keyword fallback. Used for statute index lookups only.
+              <strong>Voice input</strong> - if you use the microphone button on /ask, transcription runs in your browser using its native speech-recognition. No audio is sent to Lex.NY.
             </li>
             <li>
-              <strong>Ollama (local)</strong> - runs the embedding model on the same workstation as the server. Receives the question text. Not a cloud service - data never leaves the host.
-            </li>
-            <li>
-              <strong>Speechmatics</strong> - if you use the microphone button on /ask, your audio stream is sent to Speechmatics for real-time transcription. The connection is direct from your browser via a short-lived JWT minted server-side. If you don’t use the mic, no audio is sent.
-            </li>
-            <li>
-              <strong>Triggerware</strong> - polls federal-bill databases on a schedule independent of any user query. Does not receive user input.
-            </li>
-            <li>
-              <strong>Cloudflare</strong> - the public hostname iam.nota.lawyer is fronted by a Cloudflare tunnel. Cloudflare sees request metadata (IP, user-agent, URL) at the edge. Their privacy policy applies to that layer.
+              <strong>Vercel</strong> - hosts the Next.js app (us-east-1). Sees request metadata (IP, user-agent, URL) at the edge. Their privacy policy applies to that layer.
             </li>
           </ul>
         </div>
@@ -103,12 +93,12 @@ export default function PrivacyPage() {
           The full list of third-party services is also documented in the
           open source repository under{" "}
           <a
-            href="https://github.com/banksythequantLab/lex-ny#sponsor-integrations-5-live-end-to-end-verified"
+            href="https://github.com/banksythequantLab/lex-ny"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[var(--color-seal-deep)] underline"
           >
-            Sponsor integrations
+            the project README
           </a>
           .
         </p>
@@ -136,8 +126,9 @@ export default function PrivacyPage() {
           privileged communications, or anything else you would not want
           a third-party API to see. If you need an air-gapped or fully
           self-hosted setup, fork the repository and run it on your own
-          infrastructure - the entire stack (Postgres, Ollama, Neo4j) can
-          run on a single workstation without any outbound API calls.
+          infrastructure - the entire stack (Postgres with pgvector for the
+          corpus, citation graph, and full-text search) can run on your own
+          hardware without any outbound API calls.
         </p>
 
         <h2 className="font-[family-name:var(--font-display)] text-2xl mt-12 mb-3">

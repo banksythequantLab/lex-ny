@@ -64,11 +64,12 @@ export default function AboutPage() {
           The architecture
         </h2>
         <p className="leading-relaxed mb-4">
-          Every claim Lex.NY produces is tied to a source that exists in one of
-          three places: the indexed corpus (5.5 million NY legal records, every
-          case decision and statute section), the citation graph (4.9 million
-          opinion-to-opinion edges in Neo4j), or a live web fetch (via Bright
-          Data&rsquo;s Web Unlocker against authoritative NY publishers).
+          Every claim Lex.NY produces is tied to a source that exists in the
+          corpus: 1.3M+ NY opinions and statute sections stored in AWS Aurora
+          PostgreSQL, alongside the citation graph (4.9M citation edges in
+          Aurora, traversed with recursive CTEs over CITES / APPLIES edges).
+          Retrieval is corpus-only — pgvector semantic search and Postgres
+          full-text search run against the same Aurora engine.
         </p>
         <p className="leading-relaxed mb-4">
           The retrieval pipeline runs before the language model ever sees the
@@ -95,7 +96,7 @@ export default function AboutPage() {
           What this is — and isn&rsquo;t
         </h2>
         <div className="border border-[var(--color-rule)]/30 rounded-sm p-6 mb-4 bg-[var(--color-paper-2)]">
-          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-seal-deep)] mb-2">
+          <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-seal-deep)] mb-2">
             This is
           </div>
           <ul className="leading-relaxed space-y-1 mb-5">
@@ -104,7 +105,7 @@ export default function AboutPage() {
             <li>A way to navigate the citation graph (cited-by, citing)</li>
             <li>Open-source, attorney-supervised, free to use</li>
           </ul>
-          <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">
+          <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">
             This is not
           </div>
           <ul className="leading-relaxed space-y-1">
@@ -119,11 +120,13 @@ export default function AboutPage() {
           Using Lex.NY responsibly
         </h2>
         <p className="leading-relaxed mb-4">
-          Verify every citation in the underlying source before relying on it.
-          The links Lex.NY provides go to CourtListener, the NY Senate&rsquo;s
-          OpenLegislation site, and other primary sources. Click through. Read
-          the actual case. The whole point of citation-anchored AI is that the
-          citations exist and you can check them.
+          Every citation Lex.NY shows is drawn from a real New York opinion or
+          statute — the links go to CourtListener, the NY Senate&rsquo;s
+          OpenLegislation site, and other primary sources, so you can open the
+          actual case. The whole point of citation-anchored AI is that the
+          citations are real and traceable. What is <em>not</em> guaranteed is the
+          legal interpretation: the analysis may be wrong, so do not rely on it to
+          make legal decisions.
         </p>
         <p className="leading-relaxed mb-4">
           If you&rsquo;re facing an actual legal problem,{" "}
@@ -172,10 +175,10 @@ export default function AboutPage() {
         </h2>
         <p className="leading-relaxed mb-4">
           The Lex.NY public API is rate-limited at 10 requests per minute per
-          IP address, with the streaming endpoint at 5/min. Each call invokes
-          live Bright Data web requests and Groq inference, and the workstation
-          serving this is finite. If you need higher throughput, fork the
-          repo — the architecture is reproducible.
+          IP address, with the streaming endpoint at 5/min. Each call runs
+          pgvector retrieval against AWS Aurora and a fast hosted model under a
+          strict-citation prompt, and capacity is finite. If you need higher
+          throughput, fork the repo — the architecture is reproducible.
         </p>
 
         <p className="mt-12 font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)]">

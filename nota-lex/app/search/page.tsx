@@ -169,7 +169,7 @@ export default function SearchPage() {
             current 'old-bias' (the embed job started historical and is
             climbing forward) by demanding minimum graph-cited cases. */}
         <div className="flex flex-wrap items-center gap-2 mb-10 text-xs">
-          <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mr-1">
+          <span className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] mr-1">
             Min citations
           </span>
           {[
@@ -196,7 +196,7 @@ export default function SearchPage() {
             );
           })}
           {minCites > 0 && (
-            <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-seal-deep)] ml-2">
+            <span className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-seal-deep)] ml-2">
               Filtering for cases cited ≥{minCites.toLocaleString()} times
             </span>
           )}
@@ -210,7 +210,7 @@ export default function SearchPage() {
 
         {res && (
           <>
-            <div className="mb-4 font-[family-name:var(--font-mono)] text-[11px] tracking-wider uppercase text-[var(--color-ink-2)]">
+            <div className="mb-4 font-[family-name:var(--font-mono)] text-[16px] tracking-wider uppercase text-[var(--color-ink-2)]">
               {res.results.length} results · embed {res.timing_ms.embed}ms · retrieve {res.timing_ms.retrieve}ms · total {res.timing_ms.total}ms
             </div>
             <div className="space-y-3">
@@ -226,11 +226,11 @@ export default function SearchPage() {
                     <div className="font-[family-name:var(--font-display)] text-[17px] leading-snug">
                       {h.case_name}
                     </div>
-                    <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] whitespace-nowrap">
+                    <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] whitespace-nowrap">
                       sim {h.similarity.toFixed(3)}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-[family-name:var(--font-mono)] tracking-wider uppercase text-[var(--color-ink-2)]">
+                  <div className="flex flex-wrap items-center gap-2 text-[16px] font-[family-name:var(--font-mono)] tracking-wider uppercase text-[var(--color-ink-2)]">
                     <span className="px-1.5 py-0.5 bg-[var(--color-rule)]/15 rounded">{COURT_NAMES[h.court_id] || h.court_id}</span>
                     <span>{h.decision_date}</span>
                     {h.cited_by_count > 0 && (
@@ -248,10 +248,10 @@ export default function SearchPage() {
         {!res && !error && !loading && (
           <div className="border border-dashed border-[var(--color-rule)]/40 rounded-sm p-10 text-center">
             <p className="text-sm text-[var(--color-ink-2)]">
-              Type a query above. Lex.NY currently has{" "}
-              <strong className="text-[var(--color-ink)]">tens of thousands</strong>{" "}
-              of opinions embedded (climbing toward 1.32M live). Citation-graph rankings come from{" "}
-              <strong className="text-[var(--color-ink)]">2.2M+ NY-to-NY citations</strong> already loaded.
+              Type a query above. Lex.NY has all{" "}
+              <strong className="text-[var(--color-ink)]">1.32M New York opinions</strong>{" "}
+              embedded for semantic search, with rankings from a{" "}
+              <strong className="text-[var(--color-ink)]">4.9M-edge citation graph</strong>.
             </p>
           </div>
         )}

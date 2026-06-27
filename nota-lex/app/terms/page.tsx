@@ -80,11 +80,9 @@ export default function TermsPage() {
         <p className="leading-relaxed mb-4">
           The Lex.NY corpus is updated periodically from bulk dumps published
           by the Free Law Project (CourtListener) and the New York State
-          Senate. Live web requests via Bright Data fetch current text from
-          authoritative publishers at query time, but no system is
-          instantaneous. New decisions and statutory amendments may not yet
-          be reflected. Treat anything time-sensitive as a starting point
-          for further verification, not the final word.
+          Senate. No system is instantaneous, and new decisions and statutory
+          amendments may not yet be reflected. Treat anything time-sensitive as
+          a starting point for further verification, not the final word.
         </p>
 
         <h2 className="font-[family-name:var(--font-display)] text-2xl mt-12 mb-3">

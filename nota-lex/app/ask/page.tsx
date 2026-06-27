@@ -13,8 +13,8 @@ function AskPageInner() {
   const initialQ = searchParams.get("q") || "";
 
   const [question, setQuestion] = useState(initialQ);
-  // Bright Data live SERP retired (self-hosted era). use_live_serp is
-  // always sent as false; the toggle was removed from the UI.
+  // Live web retrieval retired — retrieval is corpus-only from Aurora.
+  // use_live_serp is always sent as false; the toggle was removed from the UI.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LexAnswer | null>(null);
@@ -48,7 +48,7 @@ function AskPageInner() {
       "Searching the NY appellate corpus…",
       "Searching the Consolidated Laws…",
       "Ranking sources by relevance…",
-      "Asking Qwen3 30B on the local GPU to draft an answer with citations…",
+      "Drafting a cited answer from the retrieved sources…",
     ];
     let stageIdx = 0;
     const stageInterval = setInterval(() => {
@@ -151,7 +151,7 @@ function AskPageInner() {
               web_data_provider: webProvider,
               graph_provider: graphProvider,
               disclaimer:
-                "Lex.NY is a research tool, not legal advice. Always verify citations against the underlying source before relying on them.",
+                "Lex.NY is an experimental research tool, not legal advice. Every citation comes from a real New York opinion or statute, but the legal interpretation is not guaranteed correct — consult a licensed NY attorney before relying on it.",
             } as LexAnswer);
           } else if (event === "error") {
             throw new Error(payload.message || "stream error");
@@ -187,7 +187,7 @@ function AskPageInner() {
             </span>
           </div>
           <div className="flex gap-5">
-            <span>Powered by Bright Data + CourtListener + NY Senate</span>
+            <span>Powered by AWS Aurora · pgvector retrieval</span>
           </div>
         </div>
       </div>
@@ -274,13 +274,15 @@ function AskPageInner() {
           <div className="max-w-[1180px] mx-auto px-7 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Answer</CardTitle>
-                <CardDescription>
-                  {(result.total_duration_ms / 1000).toFixed(1)}s · {result.citations.length} sources cited
-                  {result.web_data_provider && (
-                    <> · Live web data via <strong>Bright Data</strong></>
-                  )}
-                </CardDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Answer</CardTitle>
+                    <CardDescription>
+                      {(result.total_duration_ms / 1000).toFixed(1)}s · {result.citations.length} sources cited · citations inline
+                    </CardDescription>
+                  </div>
+                  <CopyAnswerButton answer={result.answer} citations={result.citations} />
+                </div>
               </CardHeader>
               <CardContent>
                 <AnswerBody answer={result.answer} citations={result.citations} />
@@ -291,10 +293,15 @@ function AskPageInner() {
             {result.citations.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Sources cited</CardTitle>
-                  <CardDescription>
-                    Click any source to verify the citation directly.
-                  </CardDescription>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <CardTitle>Sources cited</CardTitle>
+                      <CardDescription>
+                        New York Bluebook citations — click any source to open it.
+                      </CardDescription>
+                    </div>
+                    <CopyCitesButton citations={result.citations} />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {result.citations.map((c) => (
@@ -305,9 +312,15 @@ function AskPageInner() {
             )}
 
             {/* Disclaimer */}
-            <p className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider text-[var(--color-ink-2)] max-w-[900px] leading-relaxed">
-              {result.disclaimer}
-            </p>
+            <div className="rounded border border-[var(--color-seal)]/40 bg-[var(--color-seal)]/[0.06] p-4 max-w-[900px]">
+              <p className="text-[13.5px] text-[var(--color-ink)] leading-relaxed">
+                <strong className="text-[var(--color-seal-deep)]">Experimental — not legal advice.</strong>{" "}
+                Lex.NY is an experimental research tool. Every citation it shows is drawn from a real New York opinion or statute, but the legal analysis and interpretation are <strong>not guaranteed to be correct</strong>. It does not provide legal advice and is <strong>not a substitute for a licensed attorney</strong> — consult a qualified New York attorney before relying on it.
+              </p>
+              <p className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider text-[var(--color-ink-2)] mt-2 leading-relaxed">
+                {result.disclaimer}
+              </p>
+            </div>
           </div>
         </section>
       )}
@@ -319,31 +332,45 @@ function AskPageInner() {
  * Render the answer markdown with citation markers converted to
  * inline superscript-style links that scroll to the matching source card.
  */
+function inlineCiteLabel(cite: AnswerCitation, seen: boolean): string {
+  const full = cite.bluebook || cite.display;
+  if (seen) {
+    return cite.kind === "opinion"
+      ? full.split(/, | \(/)[0]
+      : full.replace(/ \(McKinney\)$/, "");
+  }
+  return full;
+}
+
 function AnswerBody({ answer, citations }: { answer: string; citations: AnswerCitation[] }) {
   const citationMap = new Map(citations.map((c) => [c.marker, c]));
-  // Split on [n] markers and interpolate links
+  const seen = new Set<number>();
   const parts = answer.split(/(\[\d+\])/g);
   return (
-    <div className="prose prose-stone max-w-none font-[family-name:var(--font-serif)] text-[17px] leading-[1.7]">
+    <div className="font-[family-name:var(--font-display)] text-[18px] leading-[1.75] text-[var(--color-ink)]">
       {parts.map((part, idx) => {
         const markerMatch = part.match(/\[(\d+)\]/);
         if (markerMatch) {
           const marker = parseInt(markerMatch[1], 10);
           const cite = citationMap.get(marker);
           if (cite) {
+            const label = inlineCiteLabel(cite, seen.has(marker));
+            seen.add(marker);
+            const isOp = cite.kind === "opinion";
             return (
               <a
                 key={idx}
                 href={`#source-${marker}`}
-                className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 mx-0.5 text-[11px] font-[family-name:var(--font-mono)] font-medium bg-[var(--color-seal)]/15 text-[var(--color-seal-deep)] rounded-sm hover:bg-[var(--color-seal)]/30 no-underline"
-                title={cite.display}
+                title={cite.bluebook || cite.display}
+                className="text-[var(--color-seal-deep)] hover:text-[var(--color-navy)] no-underline"
               >
-                {marker}
+                {" "}
+                {isOp ? <em className="font-medium">{label}</em> : <span className="font-medium">{label}</span>}
+                <sup className="ml-0.5 text-[16px]">{marker}</sup>
               </a>
             );
           }
         }
-        // Render plain text with paragraph breaks
         return part.split(/\n\n+/).map((p, i, arr) => (
           <span key={`${idx}-${i}`}>
             {p}
@@ -366,7 +393,7 @@ function SourceCard({ citation }: { citation: AnswerCitation }) {
       id={`source-${citation.marker}`}
       className="flex gap-4 p-4 border border-[var(--color-rule)]/30 rounded-sm bg-[var(--color-paper-2)]"
     >
-      <div className="font-[family-name:var(--font-mono)] text-[11px] tracking-wider text-[var(--color-seal-deep)] font-medium min-w-[40px]">
+      <div className="font-[family-name:var(--font-mono)] text-[16px] tracking-wider text-[var(--color-seal-deep)] font-medium min-w-[40px]">
         [{citation.marker}]
       </div>
       <div className="flex-1">
@@ -395,6 +422,64 @@ function SourceCard({ citation }: { citation: AnswerCitation }) {
         )}
       </div>
     </div>
+  );
+}
+
+function answerToText(answer: string, citations: AnswerCitation[]): string {
+  const map = new Map(citations.map((c) => [c.marker, c]));
+  const seen = new Set<number>();
+  const prose = answer.replace(/\[(\d+)\]/g, (m, d) => {
+    const n = parseInt(d, 10);
+    const c = map.get(n);
+    if (!c) return m;
+    const label = inlineCiteLabel(c, seen.has(n));
+    seen.add(n);
+    return ` ${label} [${n}]`;
+  });
+  const sources = citations.map((c) => `[${c.marker}] ${c.bluebook || c.display}`).join("\n");
+  return (
+    `${prose.replace(/[ \t]+/g, " ").replace(/ \n/g, "\n").trim()}\n\n` +
+    `Sources\n${sources}\n\n` +
+    `Lex.NY is an experimental research tool and is not a substitute for a licensed attorney. Every citation is from a real NY source, but the legal interpretation is not guaranteed correct.`
+  );
+}
+
+function CopyAnswerButton({ answer, citations }: { answer: string; citations: AnswerCitation[] }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(answerToText(answer, citations));
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1800);
+        } catch {}
+      }}
+      title="Copy the full answer with citations inline"
+      className="shrink-0 inline-flex items-center gap-1.5 text-[18px] font-semibold border border-[var(--color-rule)]/40 rounded px-3 py-1.5 text-[var(--color-seal-deep)] hover:border-[var(--color-seal)] transition"
+    >
+      {copied ? "Copied ✓" : "Copy answer"}
+    </button>
+  );
+}
+
+function CopyCitesButton({ citations }: { citations: AnswerCitation[] }) {
+  const [copied, setCopied] = useState(false);
+  const text = citations.map((c) => `[${c.marker}] ${c.bluebook || c.display}`).join("\n");
+  return (
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1800);
+        } catch {}
+      }}
+      title="Copy all citations as Bluebook text"
+      className="shrink-0 inline-flex items-center gap-1.5 text-[18px] font-semibold border border-[var(--color-rule)]/40 rounded px-3 py-1.5 text-[var(--color-seal-deep)] hover:border-[var(--color-seal)] transition"
+    >
+      {copied ? "Copied ✓" : "Copy citations"}
+    </button>
   );
 }
 

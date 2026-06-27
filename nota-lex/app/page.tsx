@@ -1,31 +1,14 @@
 "use client";
 
 /**
- * Lex.NY homepage - the entrypoint everyone hits first when they click a
- * link to iam.nota.lawyer.
- *
- * Design goals (each one a fix vs. the prior version):
- *
- *  1. Live stats hero strip. The prior version claimed "5,000 opinions
- *     back to 1982" while the real corpus is 1.32M opinions back to 1714.
- *     The strip fetches /api/corpus-stats + /api/graph-stats on mount and
- *     degrades to a dash placeholder if either is unreachable.
- *  2. Real architecture in the "How it works" cards. Prior version said
- *     1536-dim vectors (wrong; we use 1024d mxbai-embed-large) and skipped
- *     the citation graph entirely.
- *  3. Sponsor strip showing all five live integrations + Groq. Prior
- *     version was Bright Data-only.
- *  4. Nav updated to include /watches, /how-it-works, /stats. Drops the
- *     stale "Browse corpus directly" CTA.
- *  5. No more duplicate footer. Layout.tsx already renders a global
- *     Footer; this page no longer emits its own.
- *  6. Updated sample questions to ones whose retrievals actually return
- *     strong NY-specific hits.
+ * Lex.NY homepage — law-office cover (navy + gold, Source Serif 4 + Inter)
+ * with the floating "Ask the corpus" dock pinned to the right edge. Page
+ * content is inset left of the dock on large screens.
  */
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { AskDock } from "@/components/AskDock";
 
 interface CorpusStats {
   postgres?: {
@@ -34,13 +17,6 @@ interface CorpusStats {
     opinions?: number;
     statutes?: number;
     opinion_citations?: number;
-  };
-}
-
-interface GraphStats {
-  stats?: {
-    total_nodes?: number;
-    total_relationships?: number;
   };
 }
 
@@ -53,225 +29,188 @@ function fmt(n: number | undefined): string {
 
 export default function LexLandingPage() {
   const [corpus, setCorpus] = useState<CorpusStats | null>(null);
-  const [graph, setGraph] = useState<GraphStats | null>(null);
 
   useEffect(() => {
     fetch("/api/corpus-stats")
       .then((r) => r.json())
       .then(setCorpus)
       .catch(() => setCorpus({}));
-    fetch("/api/graph-stats")
-      .then((r) => r.json())
-      .then(setGraph)
-      .catch(() => setGraph({}));
   }, []);
 
   const records = corpus?.postgres?.total_legal_records;
   const opinions = corpus?.postgres?.opinions;
   const statutes = corpus?.postgres?.statutes;
   const citations = corpus?.postgres?.opinion_citations;
-  const graphRels = graph?.stats?.total_relationships;
 
   return (
     <>
-      {/* Court caption header */}
+      <AskDock />
+
+      {/* Status strip */}
       <div className="editorial-caption">
-        <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2.5">
-          <div className="flex gap-5 items-center">
-            <span className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block animate-pulse" />
-              In session · NY-licensed attorney supervised
-            </span>
-            <span className="hidden md:inline">Docket no. BD-2026-LEX-NY</span>
-          </div>
-          <div className="flex gap-5">
-            <span className="hidden sm:inline">S.D.N.Y. · E.D.N.Y.</span>
-            <span>Open source · Apache-2.0</span>
-          </div>
+        <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2 lg:pr-[412px]">
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] inline-block" />
+            New York legal research · attorney-supervised
+          </span>
+          <span className="hidden sm:inline text-white/60">Research tool · not legal advice</span>
         </div>
       </div>
 
-      {/* Sticky nav */}
-        {/* Hero */}
-      <header className="py-14 pb-10">
-        <div className="max-w-[1180px] mx-auto px-7 grid lg:grid-cols-[1.25fr_0.85fr] gap-12 items-start">
-          <div>
-            <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-3">
-              Lex.NY · Research engine for New York law
+      {/* Everything inset left of the floating dock on large screens */}
+      <div className="lg:mr-[392px]">
+        {/* HERO — navy block */}
+        <header className="bg-[var(--color-navy)]">
+          <div className="max-w-[1180px] mx-auto px-7 py-16 md:py-24">
+            <div className="max-w-[720px]">
+              <div className="font-[family-name:var(--font-sans)] text-[18px] font-semibold tracking-[0.18em] uppercase text-[var(--color-gold)] mb-4">
+                Lex.NY · Research engine for New York law
+              </div>
+              <h1 className="text-white font-[family-name:var(--font-display)] text-[48px] md:text-[62px] leading-[1.04] font-bold mb-6">
+                Every case. Every statute.<br />
+                <span className="text-[var(--color-gold)]">Every cite verifiable.</span>
+              </h1>
+              <p className="text-xl md:text-[22px] text-white/75 mb-8 leading-relaxed">
+                Ask a plain-English question about New York law. Get an answer grounded in real opinions and statutes — every claim anchored to a source you can open and read for yourself.
+              </p>
+              <div className="flex flex-wrap gap-3 items-center">
+                <Link
+                  href="/ask"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded bg-[var(--color-gold)] text-[var(--color-navy)] font-semibold text-[15px] hover:brightness-105 transition"
+                >
+                  Ask a research question →
+                </Link>
+                <Link
+                  href="/how-it-works"
+                  className="inline-flex items-center px-6 py-3.5 rounded border border-white/25 text-white text-[15px] hover:bg-white/10 transition"
+                >
+                  How it works
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-9">
+                {STACK_CHIPS.map((c) => (
+                  <span
+                    key={c}
+                    className="font-[family-name:var(--font-sans)] text-[16px] font-medium tracking-wider uppercase text-white/65 border border-white/15 rounded-full px-3 py-1"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+
+              <p className="text-[13px] text-white/45 mt-8 max-w-[560px] leading-relaxed">
+                Ask the corpus from the panel on the right — or open the full page. Research tool, not legal advice; supervised by Derek Soltis, Esq. (NY Bar).
+              </p>
             </div>
-            <h1 className="font-[family-name:var(--font-display)] text-[58px] md:text-[64px] leading-[0.96] font-normal tracking-tight mb-6">
-              Every case.<br />
-              Every statute.<br />
-              <em className="italic text-[var(--color-seal-deep)]">Every cite verifiable.</em>
-            </h1>
-            <p className="text-xl text-[var(--color-ink-2)] mb-8 leading-relaxed max-w-[600px]">
-              Ask a plain-English question about New York law. Get an answer grounded in real opinions and statutes, with every claim anchored to a source you can open and verify.
+          </div>
+        </header>
+
+        {/* LIVE STATS STRIP */}
+        <section className="bg-[var(--color-paper-2)] border-b border-[var(--color-line)]">
+          <div className="max-w-[1180px] mx-auto px-7 py-10 grid grid-cols-2 md:grid-cols-5 gap-6">
+            <Stat n={fmt(records)} label="Legal records" accent />
+            <Stat n={fmt(opinions)} label="Opinions" sub="1714 – 2026" />
+            <Stat n={fmt(statutes)} label="Statute sections" sub="all 137 NY laws" />
+            <Stat n={fmt(citations)} label="Citation edges" sub="opinion → opinion" />
+            <Stat n="3.5M" label="Vector embeddings" sub="mxbai · 1024-d" />
+          </div>
+          <div className="max-w-[1180px] mx-auto px-7 pb-6">
+            <p className="font-[family-name:var(--font-sans)] text-[16px] font-medium tracking-wider uppercase text-[var(--color-ink-2)]">
+              Live · pulled from Aurora via{" "}
+              <Link href="/stats" className="underline hover:text-[var(--color-seal-deep)]">/stats</Link>
+              {" "}on page load
             </p>
-            <div className="flex flex-wrap gap-4 items-center">
-              <Button asChild size="lg">
-                <Link href="/ask">Ask a research question →</Link>
-              </Button>
+          </div>
+        </section>
+
+        {/* Architecture */}
+        <section className="py-16">
+          <div className="max-w-[1180px] mx-auto px-7">
+            <div className="font-[family-name:var(--font-sans)] text-[18px] font-semibold tracking-wider uppercase text-[var(--color-seal-deep)] mb-2">
+              How Lex.NY works
+            </div>
+            <h2 className="font-[family-name:var(--font-display)] text-[38px] md:text-[42px] leading-tight mb-12 max-w-[820px]">
+              Built so the model can&rsquo;t hallucinate.
+            </h2>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              <ArchCard
+                n="§ 1"
+                title="A New York–only corpus"
+                body="1.32 million indexed opinions — the NY Court of Appeals, all four Appellate Divisions, and the federal SDNY / EDNY — plus all 137 NY Consolidated Laws and ~40,000 statute sections. Embedded with mxbai-embed-large (1024-d) into pgvector on AWS Aurora."
+              />
+              <ArchCard
+                n="§ 2"
+                title="The citation graph, in one database"
+                body="Every opinion's CITES and APPLIES edges live as relational tables in Aurora and are traversed with recursive CTEs — most-cited decisions, judge influence, good-law signals — all in the same engine as the vectors."
+              />
+              <ArchCard
+                n="§ 3"
+                title="Citations are mandatory"
+                body="The drafting model works under a system prompt that forbids any unsourced claim. Every paragraph anchors to a numbered marker pointing into the retrieved context. If the corpus doesn't cover the question, Lex.NY abstains."
+              />
+            </div>
+
+            <div className="flex items-center gap-4 mt-10 flex-wrap">
               <Link
                 href="/how-it-works"
-                className="text-sm text-[var(--color-ink-2)] hover:text-[var(--color-ink)] underline underline-offset-4"
+                className="text-[15px] font-[family-name:var(--font-sans)] font-semibold tracking-wide uppercase border border-[var(--color-navy)] text-[var(--color-navy)] rounded px-4 py-2 hover:bg-[var(--color-navy)] hover:text-white transition-colors"
               >
-                How it works
+                Full architecture →
+              </Link>
+              <Link href="/stats" className="text-[15px] text-[var(--color-ink-2)] hover:text-[var(--color-navy)] underline underline-offset-4">
+                Or see every number live on /stats
               </Link>
             </div>
+          </div>
+        </section>
 
-            <p className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider text-[var(--color-ink-2)] mt-6 max-w-[560px]">
-              Research tool, not legal advice. Supervised by Derek Soltis, Esq. (NY Bar). For binding counsel, engage a qualified NY attorney.
+        {/* Stack strip */}
+        <section className="border-t border-[var(--color-line)] py-16 bg-[var(--color-paper-3)]">
+          <div className="max-w-[1180px] mx-auto px-7">
+            <div className="font-[family-name:var(--font-sans)] text-[18px] font-semibold tracking-wider uppercase text-[var(--color-seal-deep)] mb-2">
+              The stack — AWS-native, verified end-to-end
+            </div>
+            <h2 className="font-[family-name:var(--font-display)] text-[32px] md:text-[36px] leading-tight mb-10 max-w-[800px]">
+              Real infrastructure. Real numbers. Receipts on every page.
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {STACK.map((s) => (
+                <StackTile key={s.name} {...s} />
+              ))}
+            </div>
+            <p className="font-[family-name:var(--font-sans)] text-[16px] font-medium tracking-wider uppercase text-[var(--color-ink-2)] mt-10">
+              Built on AWS · Aurora PostgreSQL Serverless v2 · Deployed on Vercel
             </p>
           </div>
+        </section>
 
-          {/* Sample questions card */}
-          <aside className="rounded-sm border border-[var(--color-rule)]/40 bg-[var(--color-paper-2)] p-6">
-            <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-3">
-              Try asking
-            </div>
-            <ul className="space-y-2.5 list-none p-0">
-              {SAMPLE_QUESTIONS.map((q) => (
-                <li key={q}>
-                  <Link
-                    href={`/ask?q=${encodeURIComponent(q)}`}
-                    className="block text-[14.5px] leading-snug text-[var(--color-ink)] hover:text-[var(--color-seal-deep)] border-b border-[var(--color-rule)]/20 pb-2.5"
-                  >
-                    &ldquo;{q}&rdquo;
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </aside>
-        </div>
-      </header>
-
-      {/* LIVE STATS STRIP */}
-      <section className="border-t border-[var(--color-rule)]/30 bg-[var(--color-paper-2)]">
-        <div className="max-w-[1180px] mx-auto px-7 py-10 grid grid-cols-2 md:grid-cols-5 gap-6">
-          <Stat n={fmt(records)} label="Legal records" accent />
-          <Stat n={fmt(opinions)} label="Opinions" sub="1714 – 2026" />
-          <Stat n={fmt(statutes)} label="Statute sections" sub="all 137 NY laws" />
-          <Stat n={fmt(citations)} label="Citation edges" sub="opinion → opinion" />
-          <Stat n={fmt(graphRels)} label="Graph relationships" sub="Neo4j AuraDB" />
-        </div>
-        <div className="max-w-[1180px] mx-auto px-7 pb-6">
-          <p className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)]">
-            Live · pulled from{" "}
-            <Link href="/stats" className="underline hover:text-[var(--color-ink)]">/stats</Link>
-            {" "}on page load
-          </p>
-        </div>
-      </section>
-
-      {/* The architecture */}
-      <section className="border-t border-[var(--color-rule)]/30 py-14">
-        <div className="max-w-[1180px] mx-auto px-7">
-          <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">
-            How Lex.NY works
-          </div>
-          <h2 className="font-[family-name:var(--font-display)] text-[40px] leading-tight mb-12 max-w-[820px]">
-            Built so the model <em className="italic text-[var(--color-seal-deep)]">can’t</em> hallucinate.
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-10 mb-10">
-            <ArchCard
-              n="§ 1"
-              title="A NY-specific corpus"
-              body="1.32 million indexed opinions from the NY Court of Appeals, all four Appellate Divisions, and the federal SDNY / EDNY, plus all 137 NY Consolidated Laws and 40,000 statute sections. Embedded into pgvector locally with mxbai-embed-large (1024-d)."
-            />
-            <ArchCard
-              n="§ 2"
-              title="Graph beats vectors"
-              body="Pure vector search returns cases that read alike. The 6.95 million-edge citation graph in Neo4j returns cases that matter — leading precedent surfaced by traversal, not similarity. CITES + APPLIES edges seeded from every retrieved opinion."
-            />
-            <ArchCard
-              n="§ 3"
-              title="Citations are mandatory"
-              body="Llama 3.3 70B drafts the answer through Groq, but the system prompt forbids any unsourced claim. Every paragraph anchors to a numbered marker pointing into the retrieval context. If the corpus doesn’t cover the question, Lex.NY abstains."
-            />
-          </div>
-          <div className="flex items-center gap-4 mt-8 flex-wrap">
-            <Link
-              href="/how-it-works"
-              className="text-sm font-[family-name:var(--font-mono)] tracking-wider uppercase border border-[var(--color-seal-deep)] text-[var(--color-seal-deep)] rounded px-3 py-1.5 hover:bg-[var(--color-seal-deep)] hover:text-white transition-colors"
-            >
-              Full architecture →
-            </Link>
-            <Link href="/stats" className="text-sm text-[var(--color-ink-2)] hover:text-[var(--color-ink)] underline underline-offset-4">
-              Or see every number live on /stats
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Sponsor strip */}
-      <section className="border-t border-[var(--color-rule)]/30 py-14 bg-[var(--color-paper-2)]">
-        <div className="max-w-[1180px] mx-auto px-7">
-          <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">
-            Built with — 5 sponsor integrations + Groq, all verified end-to-end
-          </div>
-          <h2 className="font-[family-name:var(--font-display)] text-[34px] leading-tight mb-10 max-w-[800px]">
-            Real infrastructure. Real numbers. <em className="italic">Receipts on every page.</em>
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <SponsorTile
-              name="Bright Data"
-              role="Web Unlocker + SERP"
-              detail="Three parallel calls on every /api/ask — nysenate.gov, law.justia.com, courtlistener.com — for live, current statutory and decisional text."
-            />
-            <SponsorTile
-              name="Neo4j AuraDB"
-              role="GraphRAG citation graph"
-              detail="1.36M nodes, 6.95M relationships. The CITES + APPLIES traversal turns a vector hit into a controlling-precedent map."
-            />
-            <SponsorTile
-              name="Algolia"
-              role="Federated statute search"
-              detail="All 40,000 NY statute sections indexed for sub-100ms keyword + facet search. Powers the search page’s instant statute lookup."
-            />
-            <SponsorTile
-              name="Speechmatics"
-              role="Voice input"
-              detail="Real-time WebSocket transcription wired to the /ask page mic. JWT minted server-side, no client-side keys."
-            />
-            <SponsorTile
-              name="Triggerware"
-              role="Legislative watches"
-              detail="Two active SQL-compiled watches on federal bills (consumer protection + data privacy / hemp). Live deltas on /watches."
-            />
-            <SponsorTile
-              name="Groq"
-              role="Inference"
-              detail="Llama 3.3 70B drafting under a strict-citation system prompt. ~135 tok/s streaming via Server-Sent Events."
-            />
-          </div>
-          <p className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)] mt-10">
-            Submitted to Web Data UNLOCKED · HackerNoon Proof of Usefulness
-          </p>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t border-[var(--color-rule)]/30 py-14">
-        <div className="max-w-[1180px] mx-auto px-7 text-center">
-          <h2 className="font-[family-name:var(--font-display)] text-[34px] leading-tight mb-5 max-w-[640px] mx-auto">
-            Open the corpus. Ask a question. <em className="italic text-[var(--color-seal-deep)]">Verify every cite.</em>
-          </h2>
-          <p className="text-[var(--color-ink-2)] mb-7 max-w-[560px] mx-auto leading-relaxed">
-            Free, public, rate-limited, attorney-supervised. The repo is on GitHub. The model can’t see anything that wasn’t retrieved first.
-          </p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            <Button asChild size="lg">
-              <Link href="/ask">Ask a research question →</Link>
-            </Button>
-            <Button asChild variant="ghost" size="lg">
-              <a href="https://github.com/banksythequantLab/lex-ny" target="_blank" rel="noopener noreferrer">
+        {/* CTA */}
+        <section className="border-t border-[var(--color-line)] py-16">
+          <div className="max-w-[1180px] mx-auto px-7 text-center">
+            <h2 className="font-[family-name:var(--font-display)] text-[32px] md:text-[36px] leading-tight mb-5 max-w-[640px] mx-auto">
+              Open the corpus. Ask a question. Verify every cite.
+            </h2>
+            <p className="text-[17px] text-[var(--color-ink-2)] mb-7 max-w-[560px] mx-auto leading-relaxed">
+              Free, public, rate-limited, attorney-supervised. The model can&rsquo;t see anything that wasn&rsquo;t retrieved from the corpus first.
+            </p>
+            <div className="flex justify-center gap-3 flex-wrap">
+              <Link href="/ask" className="editorial-button">
+                Ask a research question →
+              </Link>
+              <a
+                href="https://github.com/banksythequantLab/lex-ny"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="editorial-button ghost"
+              >
                 View source on GitHub
               </a>
-            </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   );
 }
@@ -291,17 +230,17 @@ function Stat({
     <div>
       <div
         className={
-          "font-[family-name:var(--font-display)] text-[36px] md:text-[42px] leading-none tabular-nums mb-1.5 " +
-          (accent ? "text-[var(--color-seal-deep)]" : "text-[var(--color-ink)]")
+          "font-[family-name:var(--font-display)] text-[38px] md:text-[44px] leading-none tabular-nums mb-1.5 font-bold " +
+          (accent ? "text-[var(--color-seal-deep)]" : "text-[var(--color-navy)]")
         }
       >
         {n}
       </div>
-      <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)]">
+      <div className="font-[family-name:var(--font-sans)] text-[16px] font-semibold tracking-wider uppercase text-[var(--color-ink-2)]">
         {label}
       </div>
       {sub && (
-        <div className="font-[family-name:var(--font-mono)] text-[10px] text-[var(--color-ink-2)]/70 mt-1">
+        <div className="font-[family-name:var(--font-sans)] text-[16px] text-[var(--color-ink-2)]/70 mt-1">
           {sub}
         </div>
       )}
@@ -311,19 +250,19 @@ function Stat({
 
 function ArchCard({ n, title, body }: { n: string; title: string; body: string }) {
   return (
-    <div>
-      <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider text-[var(--color-seal-deep)] mb-2">
+    <div className="lib-card p-6">
+      <div className="font-[family-name:var(--font-sans)] text-[18px] font-semibold tracking-wider text-[var(--color-seal-deep)] mb-2">
         {n}
       </div>
-      <h3 className="font-[family-name:var(--font-display)] text-2xl mb-3 leading-tight">
+      <h3 className="font-[family-name:var(--font-display)] text-[26px] mb-3 leading-tight">
         {title}
       </h3>
-      <p className="text-[var(--color-ink-2)] leading-relaxed">{body}</p>
+      <p className="text-[var(--color-ink-2)] leading-relaxed text-[16px]">{body}</p>
     </div>
   );
 }
 
-function SponsorTile({
+function StackTile({
   name,
   role,
   detail,
@@ -333,22 +272,61 @@ function SponsorTile({
   detail: string;
 }) {
   return (
-    <div className="border border-[var(--color-rule)]/30 rounded-sm bg-[var(--color-paper)] p-5">
-      <div className="font-[family-name:var(--font-display)] text-xl font-semibold mb-1">
+    <div className="lib-card p-5">
+      <div className="font-[family-name:var(--font-display)] text-[22px] font-semibold mb-1 text-[var(--color-navy)]">
         {name}
       </div>
-      <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-seal-deep)] mb-3">
+      <div className="font-[family-name:var(--font-sans)] text-[16px] font-semibold tracking-wider uppercase text-[var(--color-seal-deep)] mb-3">
         {role}
       </div>
-      <p className="text-sm text-[var(--color-ink-2)] leading-relaxed">{detail}</p>
+      <p className="text-[15px] text-[var(--color-ink-2)] leading-relaxed">{detail}</p>
     </div>
   );
 }
 
-const SAMPLE_QUESTIONS = [
-  "What is the standard for summary judgment on a NY negligence claim?",
-  "When does the statute of limitations run on a NY contract claim?",
-  "What does CPLR 3211 cover for motions to dismiss?",
-  "What injuries does Labor Law section 240 (the Scaffold Law) reach?",
-  "What is the weight-of-evidence standard on appellate review in NY?",
+const STACK_CHIPS = [
+  "AWS Aurora",
+  "pgvector",
+  "mxbai-embed-large",
+  "Next.js 16",
+  "Vercel",
+];
+
+const STACK = [
+  {
+    name: "AWS Aurora PostgreSQL",
+    role: "Serverless v2 · one engine",
+    detail:
+      "pgvector ANN, the relational citation graph, and full-text search in a single database. IAM-authenticated — passwordless, with a fresh signed token per connection.",
+  },
+  {
+    name: "Answer generation",
+    role: "Strict-citation drafting",
+    detail:
+      "Every answer is drafted under a no-unsourced-claims system prompt. The model only sees what was retrieved from the corpus first — no outside knowledge bleeds in.",
+  },
+  {
+    name: "mxbai-embed-large",
+    role: "1024-d embeddings",
+    detail:
+      "The shared vector space for 3.5M indexed passages. Query and corpus are embedded identically, so retrieval matches on meaning, not keywords.",
+  },
+  {
+    name: "pgvector · IVFFlat",
+    role: "Approximate nearest neighbor",
+    detail:
+      "Sub-second vector search across the embeddings table, tuned for recall on NY-specific retrieval and pre-warmed into memory for the demo.",
+  },
+  {
+    name: "Citation graph",
+    role: "Recursive CTEs in Aurora",
+    detail:
+      "Most-cited decisions, judge influence, and case-to-case treatment — computed by traversing CITES / APPLIES edges, no separate graph store.",
+  },
+  {
+    name: "Vercel",
+    role: "Next.js 16 · us-east-1",
+    detail:
+      "Serverless functions colocated with Aurora for low-latency retrieval. Streaming answers over Server-Sent Events, deployed from GitHub.",
+  },
 ];

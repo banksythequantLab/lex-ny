@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pg from "pg";
 import { z } from "zod";
+import { Signer } from "@aws-sdk/rds-signer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,16 +36,38 @@ const SearchSchema = z.object({
   min_cites: z.number().int().min(0).max(10000).optional(),
 });
 
+function pgPassword(host: string, port: number, user: string): string | (() => Promise<string>) {
+  if (/\.rds\.amazonaws\.com$/i.test(host)) {
+    const accessKeyId = process.env.NOTA_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.NOTA_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+    const signer = new Signer({
+      region: process.env.NOTA_AWS_REGION || process.env.AWS_REGION || "us-east-1",
+      hostname: host,
+      port,
+      username: user,
+      ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
+    });
+    return () => signer.getAuthToken();
+  }
+  return process.env.PGPASSWORD || "";
+}
+
 let _pool: pg.Pool | null = null;
 function pool(): pg.Pool {
   if (!_pool) {
+    const host = process.env.PGHOST || "localhost";
+    const port = Number(process.env.PGPORT || 5432);
+    const user = process.env.PGUSER || "postgres";
+    const needsSSL = /\.amazonaws\.|\.rds\./.test(host);
     _pool = new pg.Pool({
-      host: process.env.PGHOST || "localhost",
-      port: Number(process.env.PGPORT || 5432),
-      user: process.env.PGUSER || "postgres",
-      password: process.env.PGPASSWORD,
+      host,
+      port,
+      user,
+      password: pgPassword(host, port, user),
       database: process.env.PGDATABASE || "lex",
+      ssl: needsSSL ? { rejectUnauthorized: false } : false,
       max: 4,
+      connectionTimeoutMillis: 30000,
     });
   }
   return _pool;

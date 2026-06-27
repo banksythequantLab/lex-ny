@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * /cited-by/[cl_id] — what cites this opinion, via the Neo4j citation graph.
+ * /cited-by/[cl_id] — what cites this opinion, via the Aurora citation graph.
  *
- * One Cypher hop: (citer:Opinion)-[:CITES]->(:Opinion {cl_id}). Citers are
- * ranked by their OWN inbound citation count so the most influential ones
- * float to the top — that's the GraphRAG signal in plain English.
+ * One hop over the opinion_citations edges (citer → {cl_id}), traversed with
+ * a recursive CTE in Aurora. Citers are ranked by their OWN inbound citation
+ * count so the most influential ones float to the top.
  */
 
 import { useEffect, useState, use } from "react";
@@ -77,7 +77,7 @@ export default function CitedByPage({
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block" />
             Citation graph · Lex.NY
           </span>
-          <span>Live Cypher traversal in Neo4j AuraDB</span>
+          <span>Recursive-CTE traversal in AWS Aurora</span>
         </div>
       </div>
         <div className="max-w-[1180px] mx-auto px-7 py-12">
@@ -109,7 +109,7 @@ export default function CitedByPage({
             <h1 className="font-[family-name:var(--font-display)] text-4xl mb-3 leading-tight">
               {seed.case_name}
             </h1>
-            <div className="flex flex-wrap gap-2 items-center mb-6 text-[11px] font-[family-name:var(--font-mono)] tracking-wider uppercase text-[var(--color-ink-2)]">
+            <div className="flex flex-wrap gap-2 items-center mb-6 text-[16px] font-[family-name:var(--font-mono)] tracking-wider uppercase text-[var(--color-ink-2)]">
               <span className="px-2 py-1 bg-[var(--color-rule)]/15 rounded">
                 {COURT_NAMES[seed.court_id] || seed.court_id}
               </span>
@@ -150,11 +150,11 @@ export default function CitedByPage({
                     <div className="font-[family-name:var(--font-display)] text-[17px] leading-snug">
                       {c.case_name}
                     </div>
-                    <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] whitespace-nowrap">
+                    <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] whitespace-nowrap">
                       {c.cited_by_count.toLocaleString()} cites
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-[family-name:var(--font-mono)] tracking-wider uppercase text-[var(--color-ink-2)]">
+                  <div className="flex flex-wrap items-center gap-2 text-[16px] font-[family-name:var(--font-mono)] tracking-wider uppercase text-[var(--color-ink-2)]">
                     <span className="px-1.5 py-0.5 bg-[var(--color-rule)]/15 rounded">
                       {COURT_NAMES[c.court_id] || c.court_id}
                     </span>
@@ -166,7 +166,7 @@ export default function CitedByPage({
             </div>
 
             <p className="mt-8 font-[family-name:var(--font-mono)] text-[10.5px] tracking-wider uppercase text-[var(--color-ink-2)]">
-              Cypher query ran in {data.timing_ms}ms · Neo4j AuraDB
+              Recursive-CTE query ran in {data.timing_ms}ms · AWS Aurora
             </p>
           </>
         )}

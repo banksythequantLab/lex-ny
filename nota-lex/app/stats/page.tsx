@@ -1,20 +1,16 @@
 "use client";
 
 /**
- * /stats - live corpus + sponsor dashboard, animated.
+ * /stats - live corpus + infrastructure dashboard.
+ *
+ * This page now also carries the former /corpus overview (provenance intro,
+ * "what lives where" architecture cards, and the entry-point CTAs), so the
+ * corpus story and the live telemetry live on one page.
  *
  * Architecture:
  *   - Page paints instantly with scrambling-digit placeholders.
- *   - Three background fetches kick off in useEffect:
- *       1. /api/corpus-stats   (slow: 22s cold, <100ms warm)
- *       2. /api/graph-stats    (slow: 20s cold, <100ms warm)
- *       3. All sponsor /api/*-stats in parallel
- *   - As each fetch lands, the matching AnimatedCounter eases its
- *     scrambled digits up into the real value.
- *
- * The result: the page is interactive in <100ms, the judges see digits
- * spinning for the same ~25s the server actually needs, and the reveal
- * is dramatic instead of blank.
+ *   - Background fetches hit /api/corpus-stats (Aurora counts) and
+ *     /api/llm-stats (drafting-model telemetry); counters ease up as each lands.
  */
 
 import { useEffect, useState } from "react";
@@ -50,17 +46,10 @@ interface CorpusStats {
     top_courts?: { court_id: string; count: number }[];
     error?: string;
   };
-  neo4j?: {
-    ok: boolean;
-    stats?: {
-      total_nodes: number;
-      total_relationships: number;
-      node_counts: Record<string, number>;
-      relationship_counts: Record<string, number>;
-    };
-    error?: string;
-  };
 }
+
+const fmt = (n: number | undefined | null) =>
+  n === undefined || n === null ? "—" : n.toLocaleString("en-US");
 
 export default function StatsPage() {
   const [corpus, setCorpus] = useState<CorpusStats | null>(null);
@@ -69,8 +58,6 @@ export default function StatsPage() {
   useEffect(() => {
     let cancelled = false;
 
-    // Single corpus-stats call covers both Postgres counters and Neo4j graph
-    // counts (corpus-stats joins them under one cached response).
     fetch("/api/corpus-stats", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
@@ -80,15 +67,7 @@ export default function StatsPage() {
         /* leave placeholders scrambling */
       });
 
-    // Sponsor endpoints can each respond independently and tile in.
-    const eps = [
-      "bright-data-stats",
-      "graph-stats",
-      "algolia-stats",
-      "speechmatics-stats",
-      "triggerware-stats",
-      "llm-stats",
-    ];
+    const eps = ["llm-stats"];
     eps.forEach((ep) => {
       fetch("/api/" + ep, { cache: "no-store" })
         .then((r) => r.json())
@@ -106,7 +85,6 @@ export default function StatsPage() {
   }, []);
 
   const pg = corpus?.postgres;
-  const graph = corpus?.neo4j?.stats;
 
   return (
     <main className="min-h-screen bg-[var(--color-paper)] text-[var(--color-ink)]">
@@ -117,22 +95,23 @@ export default function StatsPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block animate-pulse" />
             Live Corpus Telemetry &middot; Lex.NY
           </span>
-          <span>Reading local Postgres + Neo4j AuraDB in real time</span>
+          <span>Reading AWS Aurora PostgreSQL in real time</span>
         </div>
       </div>
 
-      {/* Sticky nav */}
-        <div className="max-w-[1180px] mx-auto px-7 py-12">
-        <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-2">
-          Lex.NY &middot; System Status
+      <div className="max-w-[1180px] mx-auto px-7 py-12">
+        <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-[0.18em] uppercase text-[var(--color-ink-2)] mb-2">
+          Lex.NY &middot; The corpus, live
         </div>
         <h1 className="font-[family-name:var(--font-display)] text-5xl mb-3">
           Every number here is live.
         </h1>
-        <p className="text-lg text-[var(--color-ink-2)] max-w-[720px] leading-relaxed mb-10">
-          Counts are fetched the moment you load this page &mdash; straight from the local Postgres
-          corpus and the Neo4j citation graph. While the server tallies them, watch the digits
-          spin.
+        <p className="text-lg text-[var(--color-ink-2)] max-w-[760px] leading-relaxed mb-10">
+          Every digitized opinion, every docket, and every section of all 137 NY Consolidated Laws &mdash;
+          pulled from CourtListener&rsquo;s bulk dumps and the NY Senate OpenLegislation API, embedded with
+          mxbai-embed-large, and stored in AWS Aurora PostgreSQL alongside the relational citation graph.
+          The counts below are fetched the moment you load this page; while the server tallies them, watch
+          the digits spin.
         </p>
 
         {/* HERO COUNTERS */}
@@ -145,14 +124,14 @@ export default function StatsPage() {
 
         {/* SECONDARY ROW */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-14">
-          <MiniStat label="Graph nodes" value={graph?.total_nodes} digits={7} />
-          <MiniStat label="Graph relationships" value={graph?.total_relationships} digits={7} />
+          <MiniStat label="Distinct courts" value={pg?.distinct_courts} digits={2} />
+          <MiniStat label="Case decisions" value={pg?.opinions} digits={7} />
           <MiniStat label="Vector embeddings" value={pg?.embeddings} digits={7} />
           <MiniStat label="Citation edges" value={pg?.opinion_citations} digits={7} />
         </div>
 
-        {/* TWO COLUMN: courts + graph breakdown */}
-        <div className="grid md:grid-cols-2 gap-8 mb-14">
+        {/* Case decisions by court */}
+        <div className="grid gap-8 mb-14">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Case decisions by court</h2>
             <div className="border border-[var(--color-rule)]/30 rounded-sm overflow-hidden">
@@ -172,7 +151,6 @@ export default function StatsPage() {
                   </div>
                 );
               }) : (
-                // Placeholder rows during scramble
                 Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="px-4 py-2.5 border-b border-[var(--color-rule)]/15 last:border-0">
                     <div className="flex justify-between items-baseline text-sm mb-1">
@@ -189,75 +167,70 @@ export default function StatsPage() {
               )}
             </div>
             {pg?.decision_date_range?.earliest && (
-              <p className="mt-3 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
+              <p className="mt-3 font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
                 Coverage: {pg.decision_date_range.earliest} &rarr; {pg.decision_date_range.latest} &middot;{" "}
                 <AnimatedCounter target={pg.distinct_courts} digits={2} /> courts
               </p>
             )}
           </div>
-
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Knowledge graph</h2>
-            <div className="border border-[var(--color-rule)]/30 rounded-sm p-5">
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-3">Nodes</div>
-              <div className="space-y-2 mb-5">
-                {graph?.node_counts ? Object.entries(graph.node_counts).sort((a,b)=>b[1]-a[1]).map(([k,v]) => (
-                  <div key={k} className="flex justify-between text-sm">
-                    <span>{k}</span>
-                    <span className="font-[family-name:var(--font-mono)] text-xs">
-                      <AnimatedCounter target={v} digits={Math.max(2, Math.floor(Math.log10(v)) + 1)} />
-                    </span>
-                  </div>
-                )) : (
-                  ["Opinion", "Statute", "Law", "Court"].map((k) => (
-                    <div key={k} className="flex justify-between text-sm">
-                      <span className="text-[var(--color-ink-2)]">{k}</span>
-                      <span className="font-[family-name:var(--font-mono)] text-xs"><AnimatedCounter target={null} digits={6} /></span>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-3">Relationships</div>
-              <div className="space-y-2">
-                {graph?.relationship_counts ? Object.entries(graph.relationship_counts).sort((a,b)=>b[1]-a[1]).map(([k,v]) => (
-                  <div key={k} className="flex justify-between text-sm">
-                    <span>{k}</span>
-                    <span className="font-[family-name:var(--font-mono)] text-xs">
-                      <AnimatedCounter target={v} digits={Math.max(2, Math.floor(Math.log10(v)) + 1)} />
-                    </span>
-                  </div>
-                )) : (
-                  ["CITES", "DECIDED_BY", "APPLIES", "UNDER"].map((k) => (
-                    <div key={k} className="flex justify-between text-sm">
-                      <span className="text-[var(--color-ink-2)]">{k}</span>
-                      <span className="font-[family-name:var(--font-mono)] text-xs"><AnimatedCounter target={null} digits={6} /></span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* SELF-HOSTED STACK
-            Each card shows a piece of the production infrastructure as of
-            the self-host release. Cards that previously named paid sponsors
-            (Bright Data SERP, Speechmatics, Algolia, Groq) have been swapped
-            to the local stack: Ollama, Postgres FTS, the browser's Web
-            Speech API, and a retired card for web search.
-         */}
+        {/* WHAT LIVES WHERE (merged from the former /corpus page) */}
+        <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">What lives where</h2>
+        <div className="grid md:grid-cols-3 gap-4 mb-14">
+          <DataCard
+            title="Aurora + pgvector"
+            href="/ask"
+            stat={`${fmt(pg?.opinions)} opinions · ${fmt(pg?.statutes)} statutes`}
+            blurb="The source-of-truth corpus in AWS Aurora PostgreSQL. Every row was streamed in from CourtListener bulk dumps or the NY Senate API and indexed for pgvector semantic search."
+          />
+          <DataCard
+            title="Aurora citation graph"
+            href="/judges"
+            stat={`${fmt(pg?.opinion_citations)} citation edges`}
+            blurb="The citation graph as relational tables in Aurora. Every NY-to-NY opinion citation is an edge, traversed with recursive CTEs. Pure vector search misses controlling precedent; the graph finds it."
+          />
+          <DataCard
+            title="Aurora full-text search"
+            href="/search"
+            stat={`${fmt(pg?.statutes)} statute sections indexed`}
+            blurb="Postgres full-text search for the moment when you already know the citation — the same Aurora engine, across all 137 NY Consolidated Laws."
+          />
+        </div>
+
+        {/* LIVE INFRASTRUCTURE */}
         <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Live infrastructure</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <SponsorCard name="Ollama (local)" sub="Qwen3 30B-A3B on RTX 3090" data={sponsors["llm-stats"]} />
-          <SponsorCard name="Postgres FTS" sub="44,758 NY statutes" data={sponsors["algolia-stats"]} />
-          <SponsorCard name="Neo4j Aura" sub="GraphRAG citation graph" data={sponsors["graph-stats"]} />
-          <SponsorCard name="Web Speech API" sub="Browser voice input (Chrome/Edge)" data={{ ok: true, stats: { configured: true } }} />
-          <SponsorCard name="Triggerware" sub="Legislative watches" data={sponsors["triggerware-stats"]} />
-          <SponsorCard name="Live web search" sub="Retired (self-hosted release)" data={{ ok: false, stats: { configured: false } }} />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-14">
+          <SponsorCard name="Aurora pgvector" sub="Semantic retrieval (1024-dim)" data={{ ok: true, stats: { configured: true } }} />
+          <SponsorCard name="Hybrid ranking" sub="vector + keyword blend" data={{ ok: true, stats: { configured: true } }} />
+          <SponsorCard name="Aurora citation graph" sub="Recursive CTEs over CITES / APPLIES" data={{ ok: true, stats: { configured: true } }} />
+          <SponsorCard name="mxbai-embed-large" sub="1024-dim query embeddings" data={{ ok: true, stats: { configured: true } }} />
+          <SponsorCard name="Drafting model" sub="Fast hosted model · strict-citation prompt" data={sponsors["llm-stats"]} />
+          <SponsorCard name="Hosting" sub="Vercel · Next.js 16 · us-east-1" data={{ ok: true, stats: { configured: true } }} />
         </div>
 
-        <p className="mt-10 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
-          Source: {corpus?.postgres?.ok ? "local Postgres (lex) \u00b7 Neo4j AuraDB \u00b7 Ollama (RTX 3090)" : "connecting\u2026"}
+        {/* THREE WAYS TO USE IT (merged from the former /corpus page) */}
+        <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Three ways to use it</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <CTACard
+            href="/ask"
+            title="Ask a question"
+            desc="Plain-English question, citation-anchored answer drawn from the NY corpus in Aurora."
+          />
+          <CTACard
+            href="/search"
+            title="Search by issue"
+            desc="Semantic case search. Type the legal issue, get the closest NY decisions ranked by citation influence."
+          />
+          <CTACard
+            href="/check"
+            title="Check a brief"
+            desc="Paste a brief and Lex.NY verifies every citation against the real NY corpus in Aurora."
+          />
+        </div>
+
+        <p className="mt-10 font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
+          Source: {corpus?.postgres?.ok ? "AWS Aurora PostgreSQL · pgvector · the citation graph" : "connecting…"}
         </p>
       </div>
     </main>
@@ -270,7 +243,7 @@ function HeroStat({ label, value, digits, accent }: { label: string; value?: num
       <div className={"font-[family-name:var(--font-display)] text-4xl mb-1 tabular-nums " + (accent ? "text-[var(--color-seal-deep)]" : "")}>
         <AnimatedCounter target={value ?? null} digits={digits} />
       </div>
-      <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)]">{label}</div>
+      <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)]">{label}</div>
     </div>
   );
 }
@@ -281,8 +254,33 @@ function MiniStat({ label, value, digits }: { label: string; value?: number | nu
       <div className="font-[family-name:var(--font-display)] text-2xl mb-0.5 tabular-nums">
         <AnimatedCounter target={value ?? null} digits={digits} />
       </div>
-      <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)]">{label}</div>
+      <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)]">{label}</div>
     </div>
+  );
+}
+
+function DataCard({ title, href, stat, blurb }: { title: string; href: string; stat: string; blurb: string }) {
+  return (
+    <Link
+      href={href}
+      className="block border border-[var(--color-rule)]/30 rounded-sm p-5 bg-[var(--color-paper-2)] hover:border-[var(--color-seal-deep)] transition-colors"
+    >
+      <div className="font-[family-name:var(--font-display)] text-[19px] mb-1">{title}</div>
+      <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-seal-deep)] mb-2">{stat}</div>
+      <p className="text-sm text-[var(--color-ink-2)] leading-relaxed">{blurb}</p>
+    </Link>
+  );
+}
+
+function CTACard({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link
+      href={href}
+      className="block border border-[var(--color-rule)]/30 rounded-sm p-5 hover:border-[var(--color-seal-deep)] transition-colors"
+    >
+      <div className="font-[family-name:var(--font-display)] text-xl mb-1">{title} &rarr;</div>
+      <p className="text-sm text-[var(--color-ink-2)] leading-relaxed">{desc}</p>
+    </Link>
   );
 }
 
@@ -308,11 +306,11 @@ function SponsorCard({ name, sub, data }: { name: string; sub: string; data: unk
     <div className="rounded-sm border border-[var(--color-rule)]/30 p-4 flex items-start justify-between gap-3">
       <div>
         <div className="font-[family-name:var(--font-display)] text-[17px] leading-tight">{name}</div>
-        <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wide uppercase text-[var(--color-ink-2)] mt-0.5">{sub}</div>
+        <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wide uppercase text-[var(--color-ink-2)] mt-0.5">{sub}</div>
       </div>
       <span
         className={
-          "shrink-0 inline-flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase px-2 py-1 rounded-full " +
+          "shrink-0 inline-flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase px-2 py-1 rounded-full " +
           (loading
             ? "bg-[var(--color-rule)]/15 text-[var(--color-ink-2)]"
             : ok
@@ -326,7 +324,7 @@ function SponsorCard({ name, sub, data }: { name: string; sub: string; data: unk
             (loading ? "bg-[var(--color-ink-2)] animate-pulse" : ok ? "bg-green-500" : "bg-[var(--color-ink-2)]")
           }
         />
-        {loading ? "checking\u2026" : ok ? "Live" : "\u00b7\u00b7\u00b7"}
+        {loading ? "checking…" : ok ? "Live" : "···"}
       </span>
     </div>
   );

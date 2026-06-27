@@ -140,7 +140,7 @@ export async function chat(opts: {
         system: opts.system,
         messages: opts.messages,
         temperature: opts.temperature ?? 0.2,
-        max_tokens: opts.max_tokens ?? 4096,
+        max_tokens: opts.max_tokens ?? 1500,
         model: config.model,
       });
       llmUsage.record({
@@ -169,7 +169,7 @@ export async function chat(opts: {
       tools: opts.tools,
       tool_choice: opts.tool_choice,
       temperature: opts.temperature ?? 0.2,
-      max_tokens: opts.max_tokens ?? 4096,
+      max_tokens: opts.max_tokens ?? 1500,
       response_format: opts.response_format,
     });
 
@@ -297,7 +297,7 @@ export async function* chatStream(opts: {
         system: opts.system,
         messages: opts.messages,
         temperature: opts.temperature ?? 0.2,
-        max_tokens: opts.max_tokens ?? 4096,
+        max_tokens: opts.max_tokens ?? 1500,
         model: config.model,
       })) {
         charsOut += delta.length;
@@ -328,7 +328,7 @@ export async function* chatStream(opts: {
         ...opts.messages,
       ],
       temperature: opts.temperature ?? 0.2,
-      max_tokens: opts.max_tokens ?? 4096,
+      max_tokens: opts.max_tokens ?? 1500,
       stream: true,
     });
 

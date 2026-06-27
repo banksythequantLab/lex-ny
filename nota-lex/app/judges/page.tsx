@@ -114,10 +114,10 @@ export default function JudgesPage() {
                       >
                         <div className="flex justify-between items-baseline mb-1.5">
                           <span className="font-[family-name:var(--font-display)] text-[15px]">
-                            <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[11px] mr-2">{i + 1}</span>
+                            <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[16px] mr-2">{i + 1}</span>
                             {j.name}
                           </span>
-                          <span className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
+                          <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
                             {j.total_citations.toLocaleString()} cites &middot; {j.authored} op.
                           </span>
                         </div>
@@ -128,7 +128,7 @@ export default function JudgesPage() {
                     );
                   })}
             </div>
-            <p className="mt-3 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
+            <p className="mt-3 font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
               Ranked by total inbound citations to authored opinions. Names from the CourtListener
               dump are surname-level pending full disambiguation.
             </p>
@@ -144,7 +144,7 @@ export default function JudgesPage() {
                   </h2>
                   <button
                     onClick={() => { setSelected(null); setProfile(null); }}
-                    className="font-[family-name:var(--font-mono)] text-[11px] uppercase tracking-wider text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
+                    className="font-[family-name:var(--font-mono)] text-[16px] uppercase tracking-wider text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
                   >
                     &larr; Most-cited
                   </button>
@@ -158,12 +158,12 @@ export default function JudgesPage() {
                       <Stat label="Years" value={`${yr(profile.first_decision)}–${yr(profile.last_decision)}`} />
                       <Stat label="Courts" value={(profile.courts || []).map(court).join(", ") || "—"} />
                     </div>
-                    <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">Most-cited authored decisions</div>
+                    <div className="font-[family-name:var(--font-mono)] text-[15px] tracking-wider uppercase text-[var(--color-ink-2)] mb-2">Most-cited authored decisions</div>
                     <ol className="list-none m-0 p-0 space-y-2">
                       {profile.top_decisions.map((d) => (
                         <li key={d.opinion_id} className="flex justify-between items-baseline gap-3">
                           <span className="text-sm"><Link href={d.cl_id ? `/case/${d.cl_id}` : "#"} className="hover:text-[var(--color-seal-deep)] hover:underline">{d.case_name}</Link> <span className="text-[var(--color-ink-2)]">({court(d.court_id)} {yr(d.decision_date)})</span></span>
-                          <span className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-seal-deep)] shrink-0">{d.inbound.toLocaleString()}&times;</span>
+                          <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-seal-deep)] shrink-0">{d.inbound.toLocaleString()}&times;</span>
                         </li>
                       ))}
                     </ol>
@@ -183,14 +183,14 @@ export default function JudgesPage() {
                     : mostCited.map((d, i) => (
                         <Link key={d.opinion_id} href={d.cl_id ? `/case/${d.cl_id}` : "#"} className="px-4 py-2.5 border-b border-[var(--color-rule)]/15 last:border-0 flex justify-between items-baseline gap-3 hover:bg-[var(--color-paper-2)]">
                           <span className="text-sm">
-                            <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[11px] mr-2">{i + 1}</span>
+                            <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[16px] mr-2">{i + 1}</span>
                             {d.case_name} <span className="text-[var(--color-ink-2)]">({court(d.court_id)} {yr(d.decision_date)})</span>
                           </span>
-                          <span className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-seal-deep)] shrink-0">{d.inbound.toLocaleString()}&times;</span>
+                          <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-seal-deep)] shrink-0">{d.inbound.toLocaleString()}&times;</span>
                         </Link>
                       ))}
                 </div>
-                <p className="mt-3 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-2)]">
+                <p className="mt-3 font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
                   Inbound citation counts from the live citation graph &middot; the cases every NY litigator cites.
                 </p>
               </>

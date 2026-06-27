@@ -1,47 +1,62 @@
 import { NextResponse } from "next/server";
 import pg from "pg";
-import { getGraphStats, isNeo4jConfigured, neo4jHealthCheck } from "@nota-lawyer/shared";
+import { Signer } from "@aws-sdk/rds-signer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// In-memory cache for the live counts. The corpus changes hourly at most
-// (background reindex jobs), so a 60s TTL is plenty. Cold first call is
-// ~22s because of the COUNT(*) over millions of rows; subsequent calls
-// within the TTL return in single-digit ms. This is what stops /stats
-// from looking "blank" while the dashboard waits on Postgres.
+/**
+ * /api/corpus-stats — live corpus size from AWS Aurora PostgreSQL (lex).
+ *
+ * Reads opinions, NY cases, statutes, embeddings, and citation-edge counts
+ * directly from Aurora. IAM-authenticated (passwordless) over SSL — the same
+ * auth path as the retrieval pipeline.
+ */
+
 const CACHE_TTL_MS = 60_000;
 let _cache: { at: number; data: Record<string, unknown> } | null = null;
 
-/**
- * /api/corpus-stats - live corpus size from LOCAL Postgres + Neo4j.
- *
- * Ground-truth dashboard feed. Reads directly from the local Postgres `lex`
- * database (NOT Supabase, which is the abandoned cloud copy). Returns counts
- * for opinions, NY cases, statutes, embeddings, citation edges, plus Neo4j
- * graph node/relationship counts and a per-court breakdown.
- */
+// Aurora IAM auth: a fresh 15-min token per connection, signed with our
+// NOTA_AWS_* creds (Vercel/Lambda reserves the AWS_* names for its own role).
+function pgPassword(host: string, port: number, user: string): string | (() => Promise<string>) {
+  if (/\.rds\.amazonaws\.com$/i.test(host)) {
+    const accessKeyId = process.env.NOTA_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.NOTA_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+    const signer = new Signer({
+      region: process.env.NOTA_AWS_REGION || process.env.AWS_REGION || "us-east-1",
+      hostname: host,
+      port,
+      username: user,
+      ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
+    });
+    return () => signer.getAuthToken();
+  }
+  return process.env.PGPASSWORD || "";
+}
 
 let _pool: pg.Pool | null = null;
 function pool(): pg.Pool {
   if (!_pool) {
+    const host = process.env.PGHOST || "localhost";
+    const port = Number(process.env.PGPORT || 5432);
+    const user = process.env.PGUSER || "postgres";
+    const needsSSL = /\.amazonaws\.|\.rds\./.test(host);
     _pool = new pg.Pool({
-      host: process.env.PGHOST || "localhost",
-      port: Number(process.env.PGPORT || 5432),
-      user: process.env.PGUSER || "postgres",
-      password: process.env.PGPASSWORD,
+      host,
+      port,
+      user,
+      password: pgPassword(host, port, user),
       database: process.env.PGDATABASE || "lex",
+      ssl: needsSSL ? { rejectUnauthorized: false } : false,
       max: 4,
+      connectionTimeoutMillis: 30000,
     });
   }
   return _pool;
 }
 
 export async function GET() {
-  // Cache hit: return immediately with X-Cache-Age header so the dashboard
-  // can show how stale the numbers are. Skipped intentionally if the cached
-  // result was an error - we want errors to surface fast and clear.
   if (_cache && Date.now() - _cache.at < CACHE_TTL_MS) {
     const age = Math.floor((Date.now() - _cache.at) / 1000);
     return NextResponse.json(_cache.data, {
@@ -54,7 +69,7 @@ export async function GET() {
   }
 
   const out: Record<string, unknown> = {
-    source: "local Postgres (lex) + Neo4j AuraDB",
+    source: "AWS Aurora PostgreSQL (lex)",
     generated_at: new Date().toISOString(),
   };
 
@@ -101,27 +116,8 @@ export async function GET() {
     out.postgres = { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 
-  if (isNeo4jConfigured()) {
-    try {
-      const health = await neo4jHealthCheck();
-      if (health.ok) {
-        const stats = await getGraphStats();
-        out.neo4j = { ok: true, health: health.details, stats };
-      } else {
-        out.neo4j = { ok: false, error: health.details };
-      }
-    } catch (e) {
-      out.neo4j = { ok: false, error: e instanceof Error ? e.message : String(e) };
-    }
-  } else {
-    out.neo4j = { ok: false, error: "not configured" };
-  }
-
-  // Only cache successful responses. If either Postgres or Neo4j errored,
-  // we want the next request to try again immediately.
   const pgOk = (out.postgres as { ok?: boolean } | undefined)?.ok === true;
-  const neoOk = (out.neo4j as { ok?: boolean } | undefined)?.ok === true;
-  if (pgOk && neoOk) {
+  if (pgOk) {
     _cache = { at: Date.now(), data: out };
   }
 

@@ -22,11 +22,18 @@ export function pgPassword(
   user: string
 ): string | (() => Promise<string>) {
   if (isRdsHost(host)) {
+    // Vercel functions run on AWS Lambda, which reserves AWS_ACCESS_KEY_ID /
+    // AWS_SECRET_ACCESS_KEY / AWS_REGION for its own execution role. Read our
+    // creds from NOTA_AWS_* (falling back to AWS_* for local/dev) and pass them
+    // explicitly so the signer uses Derek's IAM user, not Vercel's role.
+    const accessKeyId = process.env.NOTA_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.NOTA_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
     const signer = new Signer({
-      region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1",
+      region: process.env.NOTA_AWS_REGION || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1",
       hostname: host,
       port,
       username: user,
+      ...(accessKeyId && secretAccessKey ? { credentials: { accessKeyId, secretAccessKey } } : {}),
     });
     // Fresh token per new connection (tokens are valid ~15 min; only checked
     // at connect time, so long-lived pooled connections keep working).

@@ -3,12 +3,12 @@
 /**
  * VoiceInputButton — voice dictation via the browser's Web Speech API.
  *
- * Self-hosted era: previously this used Speechmatics ($1/hour). Now it
- * uses the browser's built-in SpeechRecognition (free, runs entirely
+ * Self-hosted era: voice input is now browser-native (Web Speech API).
+ * It uses the browser's built-in SpeechRecognition (free, runs entirely
  * on the client side — Chrome calls Google's speech API but no key,
  * no credits, no per-request cost to us).
  *
- * Behavior (matches the prior Speechmatics interface so the /ask and
+ * Behavior (matches the prior voice-input interface so the /ask and
  * /search wire-ups don't change):
  *   - Click to toggle. Stops automatically after ~5s of silence; user
  *     can also click to stop.

@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nota-lawyer/shared": "file:../nota-shared",
+    "@nota-lawyer/shared": "file:./vendor/nota-shared",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-progress": "^1.1.0",
@@ -25,6 +25,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
     "next": "^16.2.6",
+    "playwright": "^1.61.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "tailwind-merge": "^2.5.4",
