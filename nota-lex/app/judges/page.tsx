@@ -24,6 +24,41 @@ const COURT_NAMES: Record<string, string> = {
   nyfamct: "Family Court",
 };
 
+// Verified full names for the distinctive NY Court of Appeals judges that appear
+// in the corpus (surname -> full name). Only judges whose surname unambiguously
+// identifies them are mapped; ambiguous, Appellate-Division, or garbled surnames
+// stay surname-level to avoid misattribution.
+// Source: Wikipedia, List of (associate/chief) judges of the New York Court of Appeals.
+const JUDGE_NAMES: Record<string, string> = {
+  Kaye: "Judith S. Kaye",
+  Cardozo: "Benjamin N. Cardozo",
+  Wachtler: "Sol Wachtler",
+  Cooke: "Lawrence H. Cooke",
+  Fuld: "Stanley H. Fuld",
+  Breitel: "Charles D. Breitel",
+  Desmond: "Charles S. Desmond",
+  Lehman: "Irving Lehman",
+  Fuchsberg: "Jacob D. Fuchsberg",
+  Gabrielli: "Domenick L. Gabrielli",
+  Jasen: "Matthew J. Jasen",
+  Bellacosa: "Joseph W. Bellacosa",
+  Titone: "Vito J. Titone",
+  Hancock: "Stewart F. Hancock Jr.",
+  Ciparick: "Carmen Beauchamp Ciparick",
+  Graffeo: "Victoria A. Graffeo",
+  Rosenblatt: "Albert M. Rosenblatt",
+  Simons: "Richard D. Simons",
+  Simon: "Richard D. Simons",
+  Meyer: "Bernard S. Meyer",
+};
+const JUDGE_JUNK = new Set(["III", "II", "IV", "Jr", "Sr", "Jr.", "Sr."]);
+function displayJudge(name: string): string {
+  return JUDGE_NAMES[name] || name;
+}
+function isJunkJudge(name: string): boolean {
+  return JUDGE_JUNK.has((name || "").trim());
+}
+
 interface JudgeRow { judge_id: string; name: string; authored: number; total_citations: number; }
 interface Decision {
   opinion_id: string; cl_id: string | null; case_name: string;
@@ -100,7 +135,7 @@ export default function JudgesPage() {
                       <div className="h-1 bg-[var(--color-rule)]/15 rounded-full" />
                     </div>
                   ))
-                : judges.map((j, i) => {
+                : judges.filter((j) => !isJunkJudge(j.name)).map((j, i) => {
                     const pct = Math.max(3, (j.total_citations / maxCites) * 100);
                     const active = selected === j.judge_id;
                     return (
@@ -115,7 +150,7 @@ export default function JudgesPage() {
                         <div className="flex justify-between items-baseline mb-1.5">
                           <span className="font-[family-name:var(--font-display)] text-[15px]">
                             <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[16px] mr-2">{i + 1}</span>
-                            {j.name}
+                            {displayJudge(j.name)}
                           </span>
                           <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
                             {j.total_citations.toLocaleString()} cites &middot; {j.authored} op.
@@ -129,8 +164,9 @@ export default function JudgesPage() {
                   })}
             </div>
             <p className="mt-3 font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
-              Ranked by total inbound citations to authored opinions. Names from the CourtListener
-              dump are surname-level pending full disambiguation.
+              Ranked by total inbound citations to authored opinions. Court of Appeals judges are
+              shown with full names; remaining entries are surname-level from the CourtListener
+              dump, pending full disambiguation.
             </p>
           </div>
 
@@ -140,7 +176,7 @@ export default function JudgesPage() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="font-[family-name:var(--font-display)] text-2xl">
-                    {profile?.name ?? "Judge"}
+                    {profile ? displayJudge(profile.name) : "Judge"}
                   </h2>
                   <button
                     onClick={() => { setSelected(null); setProfile(null); }}
