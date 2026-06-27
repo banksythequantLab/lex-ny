@@ -104,6 +104,14 @@ function vecLiteral(arr: number[]): string {
   return "[" + arr.join(",") + "]";
 }
 
+// Re-ranking score: semantic similarity nudged up by citation influence, so
+// leading precedents surface above near-identical but obscure matches.
+// Similarity stays dominant; the log keeps landmark cases from swamping it.
+const CITE_WEIGHT = 0.04;
+function rankScore(h: { similarity: number; cited_by_count: number }): number {
+  return h.similarity + CITE_WEIGHT * Math.log1p(h.cited_by_count);
+}
+
 async function runSearch(
   query: string,
   limit: number,
@@ -166,6 +174,7 @@ async function runSearch(
       snippet: row.chunk_text,
     }))
     .filter((h) => h.cited_by_count >= minCites)
+    .sort((a, b) => rankScore(b) - rankScore(a))
     .slice(0, limit);
 
   return {
