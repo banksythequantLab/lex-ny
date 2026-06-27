@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import type { LexAnswer, AnswerCitation } from "@nota-lawyer/shared";
 import { VoiceInputButton } from "./VoiceInputButton";
 import { useWarmup } from "@/components/useWarmup";
+import { useElapsed } from "@/components/useElapsed";
 
 function AskPageInner() {
   const searchParams = useSearchParams();
@@ -21,6 +22,7 @@ function AskPageInner() {
   const [result, setResult] = useState<LexAnswer | null>(null);
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
   const { status: warmStatus } = useWarmup();
+  const elapsed = useElapsed(loading);
 
   // Voice-dictation baseline: the value of `question` AT THE TIME a voice
   // session began (or just after the most recent finalized segment).
@@ -266,10 +268,16 @@ function AskPageInner() {
                 </Button>
               </div>
 
-              {progressMsg && (
-                <div className="mt-3 font-[family-name:var(--font-mono)] text-xs tracking-wider text-[var(--color-ink-2)] flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 bg-[var(--color-seal)] rounded-full animate-pulse" />
-                  {progressMsg}
+              {loading && !(result?.answer) && (
+                <div className="mt-4 flex items-center gap-3 rounded-sm border border-[var(--color-rule)]/40 bg-[var(--color-paper)] px-4 py-3">
+                  <span className="inline-block w-7 h-7 rounded-full border-2 border-[var(--color-rule)]/30 border-t-[var(--color-seal-deep)] animate-spin shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-[family-name:var(--font-mono)] tabular-nums text-[var(--color-ink)] leading-none">
+                      <span className="text-2xl">{(elapsed / 1000).toFixed(1)}</span>
+                      <span className="text-sm text-[var(--color-ink-2)]"> s</span>
+                    </div>
+                    <div className="text-sm text-[var(--color-ink-2)] mt-1">{progressMsg || "Thinking…"}</div>
+                  </div>
                 </div>
               )}
 

@@ -124,6 +124,48 @@ export default function LexLandingPage() {
           </div>
         </section>
 
+        {/* SEE IT IN ACTION — demo video */}
+        <section className="border-t border-[var(--color-line)] py-16 bg-[var(--color-paper-2)]">
+          <div className="max-w-[1180px] mx-auto px-7">
+            <div className="font-[family-name:var(--font-sans)] text-[18px] font-semibold tracking-wider uppercase text-[var(--color-seal-deep)] mb-2">
+              See it in action
+            </div>
+            <h2 className="font-[family-name:var(--font-display)] text-[32px] md:text-[36px] leading-tight mb-8 max-w-[820px]">
+              Watch Lex.NY answer a question &mdash; with the receipts.
+            </h2>
+            <div className="grid lg:grid-cols-[1.7fr_1fr] gap-8 items-start">
+              <div
+                className="relative w-full rounded-sm overflow-hidden border border-[var(--color-line)] bg-black shadow-[0_12px_44px_rgba(11,31,58,0.12)]"
+                style={{ aspectRatio: "16 / 9" }}
+              >
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src="https://www.youtube-nocookie.com/embed/WmfIAZEIziE"
+                  title="Lex.NY demo"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+              <div>
+                <p className="text-[17px] text-[var(--color-ink-2)] leading-relaxed mb-4">
+                  Lex.NY answers plain-English questions about New York law with the receipts attached &mdash; every
+                  claim anchored inline to a real opinion or statute you can click straight through to. Search by issue,
+                  check a brief&rsquo;s citations, or explore judge analytics, all drawn from 1.32M NY opinions and the
+                  full statutes in AWS Aurora.
+                </p>
+                <p className="text-[17px] text-[var(--color-ink-2)] leading-relaxed mb-6">
+                  It retrieves real documents first and abstains when the corpus doesn&rsquo;t cover you &mdash; so it
+                  can&rsquo;t invent a case.
+                </p>
+                <Link href="/ask" className="editorial-button">
+                  Try it yourself &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Architecture */}
         <section className="py-16">
           <div className="max-w-[1180px] mx-auto px-7">

@@ -9,6 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWarmup } from "@/components/useWarmup";
+import { useElapsed } from "@/components/useElapsed";
 
 interface Cite {
   marker: number;
@@ -36,6 +37,7 @@ export function AskDock() {
   const [copied, setCopied] = useState(false);
   const [copiedAns, setCopiedAns] = useState(false);
   const { status: warmStatus } = useWarmup();
+  const elapsed = useElapsed(loading);
 
   async function run(question: string) {
     const qq = question.trim();
@@ -194,10 +196,16 @@ export function AskDock() {
 
       {/* Answer / sources (scrollable) */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {progress && (
-          <div className="flex items-center gap-2 text-[18px] text-[var(--color-ink-2)]">
-            <span className="inline-block w-2 h-2 rounded-full bg-[var(--color-seal)] animate-pulse" />
-            {progress}
+        {loading && !answer && (
+          <div className="flex items-center gap-3 rounded border border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-3">
+            <span className="inline-block w-6 h-6 rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-seal)] animate-spin shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="font-[family-name:var(--font-mono)] tabular-nums text-[var(--color-ink)] leading-none">
+                <span className="text-[21px]">{(elapsed / 1000).toFixed(1)}</span>
+                <span className="text-[13px] text-[var(--color-ink-2)]"> s</span>
+              </div>
+              <div className="text-[12.5px] text-[var(--color-ink-2)] mt-1 truncate">{progress || "Thinking…"}</div>
+            </div>
           </div>
         )}
         {error && (
