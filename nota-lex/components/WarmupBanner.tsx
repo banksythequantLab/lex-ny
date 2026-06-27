@@ -44,11 +44,6 @@ export function WarmupBanner() {
     const markReady = (ms: number) => {
       if (cancelled) return;
       sessionStorage.setItem("lexny_warm", "1");
-      // Already warm (instant) → don't bother showing anything.
-      if (ms < 1800 && !demo) {
-        setState("hidden");
-        return;
-      }
       setReadyMs(ms);
       setState("ready");
       setTimeout(() => {
@@ -107,7 +102,7 @@ export function WarmupBanner() {
           <>
             <span className="inline-flex w-2 h-2 rounded-full bg-green-500 shrink-0" />
             <span className="font-medium">
-              Corpus live{readyMs ? ` — ready in ${Math.round(readyMs / 1000)}s` : ""}.
+              Corpus live{readyMs != null ? ` — ${readyMs < 1200 ? "ready instantly" : "ready in " + Math.round(readyMs / 1000) + "s"}` : ""}.
             </span>
           </>
         ) : (
