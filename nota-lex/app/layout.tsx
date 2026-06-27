@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { WarmupBanner } from "@/components/WarmupBanner";
 import "./globals.css";
 
 const SITE_URL = "https://iam.nota.lawyer";
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-[var(--color-paper)] text-[var(--color-ink)]">
         <SiteNav />
+        <WarmupBanner />
         {children}
         <Footer />
       </body>
