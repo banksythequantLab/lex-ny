@@ -218,3 +218,12 @@
 .risk-badge.moderate { background: var(--color-risk-moderate); color: #fff; }
 .risk-badge.high { background: var(--color-risk-high); color: #fff; }
 .risk-badge.blocking { background: var(--color-risk-blocking); color: #fff; }
+
+
+/* Floating "Ask the corpus" dock — content insets that collapse when closed. */
+@media (min-width: 1024px) {
+  .dock-inset { margin-right: 392px; }
+  .dock-inset-pr { padding-right: 412px; }
+  html.dock-closed .dock-inset { margin-right: 0; }
+  html.dock-closed .dock-inset-pr { padding-right: 0; }
+}

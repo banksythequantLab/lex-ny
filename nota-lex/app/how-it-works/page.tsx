@@ -49,7 +49,7 @@ export default function HowItWorksPage() {
 
       {/* Status strip */}
       <div className="editorial-caption">
-        <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2 lg:pr-[412px]">
+        <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2 dock-inset-pr">
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] inline-block" />
             How it works · Lex.NY
@@ -59,7 +59,7 @@ export default function HowItWorksPage() {
       </div>
 
       {/* Content area, inset from the floating dock on large screens */}
-      <div className="lg:mr-[392px]">
+      <div className="dock-inset">
         <div className="max-w-[880px] mx-auto px-7 py-14">
           <div className="font-[family-name:var(--font-sans)] text-[16px] font-semibold tracking-[0.18em] uppercase text-[var(--color-seal-deep)] mb-3">
             The pipeline

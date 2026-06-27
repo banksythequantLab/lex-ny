@@ -6,7 +6,7 @@
  * from /api/ask/stream, reusing the same SSE protocol as the full /ask page.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useWarmup } from "@/components/useWarmup";
 import { useElapsed } from "@/components/useElapsed";
@@ -36,8 +36,18 @@ export function AskDock() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedAns, setCopiedAns] = useState(false);
+  const [open, setOpen] = useState(true);
   const { status: warmStatus } = useWarmup();
   const elapsed = useElapsed(loading);
+
+  useEffect(() => {
+    const el = document.documentElement;
+    if (open) el.classList.remove("dock-closed");
+    else el.classList.add("dock-closed");
+    return () => {
+      el.classList.remove("dock-closed");
+    };
+  }, [open]);
 
   async function run(question: string) {
     const qq = question.trim();
@@ -120,15 +130,39 @@ export function AskDock() {
 
   const citeMap = new Map(cites.map((c) => [c.marker, c]));
 
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Open Ask the corpus"
+        className="hidden lg:flex items-center gap-2.5 fixed right-5 bottom-6 z-40 bg-[var(--color-navy)] text-[var(--color-gold)] rounded-full pl-4 pr-5 py-3 shadow-[0_14px_44px_rgba(11,31,58,0.28)] hover:brightness-110 transition"
+      >
+        <span className="seal-badge" style={{ width: 24, height: 24, fontSize: 12 }}>
+          §
+        </span>
+        <span className="font-semibold text-sm tracking-wide">Ask the corpus</span>
+      </button>
+    );
+  }
+
   return (
-    <aside className="hidden lg:flex flex-col fixed top-[57px] right-0 bottom-0 w-[392px] bg-white border-l border-[var(--color-line)] shadow-[-10px_0_40px_rgba(11,31,58,0.07)] z-40">
+    <aside className="hidden lg:flex flex-col fixed top-[72px] right-5 bottom-5 w-[360px] bg-white border border-[var(--color-line)] rounded-2xl shadow-[0_24px_70px_rgba(11,31,58,0.22)] z-40 overflow-hidden">
       {/* Header */}
       <div className="bg-[var(--color-navy)] px-5 py-4">
-        <div className="flex items-center gap-2 text-[var(--color-gold)] font-semibold text-[16px] tracking-[0.16em] uppercase">
-          <span className="seal-badge" style={{ width: 26, height: 26, fontSize: 13 }}>
-            §
-          </span>
-          Ask the corpus
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[var(--color-gold)] font-semibold text-[16px] tracking-[0.16em] uppercase">
+            <span className="seal-badge" style={{ width: 26, height: 26, fontSize: 13 }}>
+              §
+            </span>
+            Ask the corpus
+          </div>
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close"
+            className="text-white/55 hover:text-white text-2xl leading-none -mt-1 -mr-1 shrink-0"
+          >
+            &times;
+          </button>
         </div>
         <p className="text-white/65 text-[12.5px] mt-2 leading-snug">
           Plain-English questions, answered only from real NY opinions and statutes — every claim cited.

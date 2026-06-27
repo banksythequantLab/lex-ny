@@ -189,6 +189,19 @@ function AskPageInner() {
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block animate-pulse" />
               Lex.NY research session
             </span>
+            <span className="flex items-center gap-2">
+              {warmStatus === "ready" ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                  Corpus live · ready to ask
+                </>
+              ) : (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-seal)] inline-block animate-pulse" />
+                  Waking the corpus…
+                </>
+              )}
+            </span>
           </div>
           <div className="flex gap-5">
             <span>Powered by AWS Aurora · pgvector retrieval</span>
@@ -249,20 +262,7 @@ function AskPageInner() {
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="flex items-center gap-2 text-sm text-[var(--color-ink-2)]">
-                  {warmStatus === "ready" ? (
-                    <>
-                      <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
-                      Corpus live &mdash; ready to ask
-                    </>
-                  ) : (
-                    <>
-                      <span className="w-2 h-2 rounded-full bg-[var(--color-seal)] animate-pulse inline-block shrink-0" />
-                      Waking the corpus &mdash; ready in a moment&hellip;
-                    </>
-                  )}
-                </span>
+              <div className="flex items-center justify-end">
                 <Button onClick={onSubmit} disabled={loading || warmStatus !== "ready"} size="lg">
                   {warmStatus !== "ready" ? "Warming…" : loading ? "Researching…" : "Ask Lex.NY →"}
                 </Button>

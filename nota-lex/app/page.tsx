@@ -48,7 +48,7 @@ export default function LexLandingPage() {
 
       {/* Status strip */}
       <div className="editorial-caption">
-        <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2 lg:pr-[412px]">
+        <div className="max-w-[1180px] mx-auto flex justify-between items-center px-7 py-2 dock-inset-pr">
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-gold)] inline-block" />
             New York legal research · attorney-supervised
@@ -58,7 +58,7 @@ export default function LexLandingPage() {
       </div>
 
       {/* Everything inset left of the floating dock on large screens */}
-      <div className="lg:mr-[392px]">
+      <div className="dock-inset">
         {/* HERO — navy block */}
         <header className="bg-[var(--color-navy)]">
           <div className="max-w-[1180px] mx-auto px-7 py-16 md:py-24">
