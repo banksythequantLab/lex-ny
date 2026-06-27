@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useWarmup } from "@/components/useWarmup";
 
 interface Cite {
   marker: number;
@@ -34,6 +35,7 @@ export function AskDock() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedAns, setCopiedAns] = useState(false);
+  const { status: warmStatus } = useWarmup();
 
   async function run(question: string) {
     const qq = question.trim();
@@ -133,6 +135,19 @@ export function AskDock() {
 
       {/* Composer */}
       <div className="px-5 pt-4 pb-3 border-b border-[var(--color-line)]">
+        <div className="flex items-center gap-2 mb-2 text-[12px]">
+          {warmStatus === "ready" ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
+              <span className="text-[var(--color-ink-2)]">Corpus live &mdash; ready to ask</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-[var(--color-seal)] animate-pulse inline-block shrink-0" />
+              <span className="text-[var(--color-ink-2)]">Waking the corpus &mdash; ready in a moment&hellip;</span>
+            </>
+          )}
+        </div>
         <textarea
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -152,11 +167,11 @@ export function AskDock() {
           </Link>
           <button
             onClick={() => run(q)}
-            disabled={loading || !q.trim()}
+            disabled={loading || !q.trim() || warmStatus !== "ready"}
             className="editorial-button disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ padding: "9px 16px", fontSize: 13 }}
           >
-            {loading ? "Researching…" : "Ask →"}
+            {warmStatus !== "ready" ? "Warming…" : loading ? "Researching…" : "Ask →"}
           </button>
         </div>
         {!answer && !loading && (

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { LexAnswer, AnswerCitation } from "@nota-lawyer/shared";
 import { VoiceInputButton } from "./VoiceInputButton";
+import { useWarmup } from "@/components/useWarmup";
 
 function AskPageInner() {
   const searchParams = useSearchParams();
@@ -19,6 +20,7 @@ function AskPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LexAnswer | null>(null);
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
+  const { status: warmStatus } = useWarmup();
 
   // Voice-dictation baseline: the value of `question` AT THE TIME a voice
   // session began (or just after the most recent finalized segment).
@@ -245,9 +247,22 @@ function AskPageInner() {
                 />
               </div>
 
-              <div className="flex items-center justify-end">
-                <Button onClick={onSubmit} disabled={loading} size="lg">
-                  {loading ? "Researching…" : "Ask Lex.NY →"}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <span className="flex items-center gap-2 text-sm text-[var(--color-ink-2)]">
+                  {warmStatus === "ready" ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
+                      Corpus live &mdash; ready to ask
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-[var(--color-seal)] animate-pulse inline-block shrink-0" />
+                      Waking the corpus &mdash; ready in a moment&hellip;
+                    </>
+                  )}
+                </span>
+                <Button onClick={onSubmit} disabled={loading || warmStatus !== "ready"} size="lg">
+                  {warmStatus !== "ready" ? "Warming…" : loading ? "Researching…" : "Ask Lex.NY →"}
                 </Button>
               </div>
 
