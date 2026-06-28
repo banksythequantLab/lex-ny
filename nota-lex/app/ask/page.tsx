@@ -9,6 +9,7 @@ import type { LexAnswer, AnswerCitation } from "@nota-lawyer/shared";
 import { VoiceInputButton } from "./VoiceInputButton";
 import { useWarmup } from "@/components/useWarmup";
 import { useElapsed } from "@/components/useElapsed";
+import { Spinner } from "@/components/Spinner";
 
 function AskPageInner() {
   const searchParams = useSearchParams();
@@ -269,6 +270,10 @@ function AskPageInner() {
               </div>
 
               {loading && !(result?.answer) && (
+                <div className="mt-4 py-6 flex justify-center"><Spinner size={24} label="Drafting your answer&hellip;" /></div>
+              )}
+
+              {loading && !(result?.answer) && (
                 <div className="mt-4 flex items-center gap-3 rounded-sm border border-[var(--color-rule)]/40 bg-[var(--color-paper)] px-4 py-3">
                   <span className="inline-block w-7 h-7 rounded-full border-2 border-[var(--color-rule)]/30 border-t-[var(--color-seal-deep)] animate-spin shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -508,7 +513,7 @@ function CopyCitesButton({ citations }: { citations: AnswerCitation[] }) {
 
 export default function AskPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-[var(--color-ink-2)]">Loading…</div>}>
+    <Suspense fallback={<div className="p-8 flex justify-center"><Spinner size={24} label="Loading…" /></div>}>
       <AskPageInner />
     </Suspense>
   );

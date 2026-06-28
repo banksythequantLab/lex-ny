@@ -11,6 +11,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { VoiceInputButton } from "../ask/VoiceInputButton";
+import { Spinner } from "@/components/Spinner";
 
 interface Hit {
   id: string;
@@ -208,7 +209,11 @@ export default function SearchPage() {
           </div>
         )}
 
-        {res && (
+        {loading && (
+          <div className="py-10 flex justify-center"><Spinner size={24} label="Searching cases&hellip;" /></div>
+        )}
+
+        {res && !loading && (
           <>
             <div className="mb-4 font-[family-name:var(--font-mono)] text-[16px] tracking-wider uppercase text-[var(--color-ink-2)]">
               {res.results.length} results · embed {res.timing_ms.embed}ms · retrieve {res.timing_ms.retrieve}ms · total {res.timing_ms.total}ms

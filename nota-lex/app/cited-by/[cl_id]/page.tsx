@@ -10,6 +10,7 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { Spinner } from "@/components/Spinner";
 
 const COURT_NAMES: Record<string, string> = {
   ny: "NY CoA",
@@ -92,7 +93,7 @@ export default function CitedByPage({
         )}
 
         {!data && !error && (
-          <div className="text-sm text-[var(--color-ink-2)]">Loading citation graph…</div>
+          <div className="py-10 flex justify-center"><Spinner size={24} label="Loading citation graph&hellip;" /></div>
         )}
 
         {data && !seed && (

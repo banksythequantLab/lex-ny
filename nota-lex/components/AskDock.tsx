@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useWarmup } from "@/components/useWarmup";
 import { useElapsed } from "@/components/useElapsed";
+import { Spinner } from "@/components/Spinner";
 
 interface Cite {
   marker: number;
@@ -230,6 +231,9 @@ export function AskDock() {
 
       {/* Answer / sources (scrollable) */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
+        {loading && !answer && (
+          <div className="mb-3 py-4 flex justify-center"><Spinner size={22} label="Drafting your answer&hellip;" /></div>
+        )}
         {loading && !answer && (
           <div className="flex items-center gap-3 rounded border border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-3">
             <span className="inline-block w-6 h-6 rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-seal)] animate-spin shrink-0" />

@@ -16,6 +16,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatedCounter } from "./AnimatedCounter";
+import { Spinner } from "@/components/Spinner";
 
 const COURT_NAMES: Record<string, string> = {
   ny: "Court of Appeals",
@@ -134,6 +135,9 @@ export default function StatsPage() {
         <div className="grid gap-8 mb-14">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Case decisions by court</h2>
+            {corpus === null && (
+              <div className="py-10 flex justify-center"><Spinner size={24} label="Loading corpus stats&hellip;" /></div>
+            )}
             <div className="border border-[var(--color-rule)]/30 rounded-sm overflow-hidden">
               {pg?.top_courts?.length ? pg.top_courts.map((c) => {
                 const pct = pg.opinions ? (c.count / pg.opinions) * 100 : 0;

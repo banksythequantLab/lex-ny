@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Spinner } from "@/components/Spinner";
 
 const SAMPLE = `On a motion for summary judgment under CPLR 3212, the movant must make a prima facie showing of entitlement to judgment as a matter of law. See Zuckerman v. City of New York. Alvarez v. Prospect Hospital sets out the burden-shifting framework, and Winegrad v. New York University Medical Center is to the same effect. Defendant's reliance on Fakename v. Nonexistent Holding Corp. is misplaced. Penal Law 125.25 defines murder in the second degree.`;
 
@@ -94,6 +95,10 @@ export default function CheckPage() {
         </div>
 
         {error && <p className="mt-4 text-sm text-red-700 font-[family-name:var(--font-mono)]">{error}</p>}
+
+        {loading && (
+          <div className="py-10 flex justify-center"><Spinner size={24} label="Verifying citations&hellip;" /></div>
+        )}
 
         {result && (
           <div className="mt-8 space-y-2.5">
