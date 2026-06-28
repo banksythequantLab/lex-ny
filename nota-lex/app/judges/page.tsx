@@ -13,6 +13,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Spinner } from "@/components/Spinner";
 
 const COURT_NAMES: Record<string, string> = {
   ny: "Court of Appeals",
@@ -176,7 +177,7 @@ export default function JudgesPage() {
             <div className="border border-[var(--color-rule)]/30 rounded-sm overflow-hidden">
               {searchMode ? (
                 results === null ? (
-                  <div className="px-4 py-3 text-[var(--color-ink-2)] text-sm">Searching&hellip;</div>
+                  <div className="px-4 py-10 flex justify-center"><Spinner size={24} label="Searching the corpus&hellip;" /></div>
                 ) : results.filter((j) => !isJunkJudge(j.name)).length === 0 ? (
                   <div className="px-4 py-3 text-[var(--color-ink-2)] text-sm">No judges match &ldquo;{query.trim()}&rdquo;.</div>
                 ) : (
@@ -200,12 +201,7 @@ export default function JudgesPage() {
                   })
                 )
               ) : judges === null ? (
-                Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="px-4 py-3 border-b border-[var(--color-rule)]/15 last:border-0">
-                    <div className="h-3 w-40 bg-[var(--color-rule)]/15 rounded animate-pulse mb-2" />
-                    <div className="h-1 bg-[var(--color-rule)]/15 rounded-full" />
-                  </div>
-                ))
+                <div className="px-4 py-12 flex justify-center"><Spinner size={26} label="Loading judges&hellip;" /></div>
               ) : (
                 judges.filter((j) => !isJunkJudge(j.name)).map((j, i) => {
                   const pct = Math.max(3, (j.total_citations / maxCites) * 100);
@@ -259,7 +255,7 @@ export default function JudgesPage() {
                   </button>
                 </div>
                 {loadingProfile || !profile ? (
-                  <div className="border border-[var(--color-rule)]/30 rounded-sm p-5 text-[var(--color-ink-2)] text-sm">Loading profile&hellip;</div>
+                  <div className="border border-[var(--color-rule)]/30 rounded-sm p-10 flex justify-center"><Spinner size={24} label="Loading profile&hellip;" /></div>
                 ) : (
                   <div className="border border-[var(--color-rule)]/30 rounded-sm p-5">
                     <div className="grid grid-cols-3 gap-3 mb-5">
