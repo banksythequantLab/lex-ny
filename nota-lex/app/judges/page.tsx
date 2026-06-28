@@ -79,6 +79,9 @@ export default function JudgesPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<JudgeRow[] | null>(null);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +94,21 @@ export default function JudgesPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Debounced name search across the full judges table (?q=).
+  useEffect(() => {
+    const term = query.trim();
+    if (term.length < 2) { setResults(null); setSearching(false); return; }
+    let cancelled = false;
+    setSearching(true);
+    const t = setTimeout(() => {
+      fetch(`/api/judges?q=${encodeURIComponent(term)}&limit=25`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => { if (!cancelled) { setResults(d.judges || []); setSearching(false); } })
+        .catch(() => { if (!cancelled) { setResults([]); setSearching(false); } });
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+
   function selectJudge(id: string) {
     setSelected(id); setProfile(null); setLoadingProfile(true);
     fetch(`/api/judges/${id}?top=8`, { cache: "no-store" })
@@ -99,6 +117,7 @@ export default function JudgesPage() {
   }
 
   const maxCites = judges && judges.length ? judges[0].total_citations : 1;
+  const searchMode = query.trim().length >= 2;
 
   return (
     <main className="min-h-screen bg-[var(--color-paper)] text-[var(--color-ink)]">
@@ -124,49 +143,103 @@ export default function JudgesPage() {
 
         <div className="grid md:grid-cols-2 gap-8">
 
-          {/* LEFT: influence leaderboard */}
+          {/* LEFT: search + influence leaderboard */}
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-2xl mb-4">Most influential judges</h2>
+            <div className="flex items-baseline justify-between gap-3 mb-4">
+              <h2 className="font-[family-name:var(--font-display)] text-2xl">
+                {searchMode ? "Search results" : "Most influential judges"}
+              </h2>
+              {searchMode && (
+                <button
+                  onClick={() => setQuery("")}
+                  className="font-[family-name:var(--font-mono)] text-[16px] uppercase tracking-wider text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <div className="relative mb-3">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search any NY judge by name..."
+                aria-label="Search judges by name"
+                className="w-full px-3.5 py-2.5 pr-9 bg-[var(--color-paper-2)] border border-[var(--color-rule)]/30 rounded-sm font-[family-name:var(--font-display)] text-[15px] placeholder:text-[var(--color-ink-2)]/60 focus:outline-none focus:border-[var(--color-seal)]/60"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 font-[family-name:var(--font-mono)] text-[15px] text-[var(--color-ink-2)]">
+                {searching ? "···" : "⌕"}
+              </span>
+            </div>
+
             <div className="border border-[var(--color-rule)]/30 rounded-sm overflow-hidden">
-              {judges === null
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="px-4 py-3 border-b border-[var(--color-rule)]/15 last:border-0">
-                      <div className="h-3 w-40 bg-[var(--color-rule)]/15 rounded animate-pulse mb-2" />
-                      <div className="h-1 bg-[var(--color-rule)]/15 rounded-full" />
-                    </div>
-                  ))
-                : judges.filter((j) => !isJunkJudge(j.name)).map((j, i) => {
-                    const pct = Math.max(3, (j.total_citations / maxCites) * 100);
+              {searchMode ? (
+                results === null ? (
+                  <div className="px-4 py-3 text-[var(--color-ink-2)] text-sm">Searching&hellip;</div>
+                ) : results.filter((j) => !isJunkJudge(j.name)).length === 0 ? (
+                  <div className="px-4 py-3 text-[var(--color-ink-2)] text-sm">No judges match &ldquo;{query.trim()}&rdquo;.</div>
+                ) : (
+                  results.filter((j) => !isJunkJudge(j.name)).map((j) => {
                     const active = selected === j.judge_id;
                     return (
                       <button
                         key={j.judge_id}
                         onClick={() => selectJudge(j.judge_id)}
                         className={
-                          "w-full text-left px-4 py-3 border-b border-[var(--color-rule)]/15 last:border-0 transition-colors " +
+                          "w-full text-left px-4 py-3 border-b border-[var(--color-rule)]/15 last:border-0 transition-colors flex justify-between items-baseline gap-3 " +
                           (active ? "bg-[var(--color-seal)]/8" : "hover:bg-[var(--color-paper-2)]")
                         }
                       >
-                        <div className="flex justify-between items-baseline mb-1.5">
-                          <span className="font-[family-name:var(--font-display)] text-[15px]">
-                            <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[16px] mr-2">{i + 1}</span>
-                            {displayJudge(j.name)}
-                          </span>
-                          <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
-                            {j.total_citations.toLocaleString()} cites &middot; {j.authored} op.
-                          </span>
-                        </div>
-                        <div className="h-1 bg-[var(--color-rule)]/15 rounded-full overflow-hidden">
-                          <div className="h-full bg-[var(--color-seal)] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
-                        </div>
+                        <span className="font-[family-name:var(--font-display)] text-[15px]">{displayJudge(j.name)}</span>
+                        <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)] shrink-0">
+                          {j.total_citations.toLocaleString()} cites &middot; {j.authored} op.
+                        </span>
                       </button>
                     );
-                  })}
+                  })
+                )
+              ) : judges === null ? (
+                Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="px-4 py-3 border-b border-[var(--color-rule)]/15 last:border-0">
+                    <div className="h-3 w-40 bg-[var(--color-rule)]/15 rounded animate-pulse mb-2" />
+                    <div className="h-1 bg-[var(--color-rule)]/15 rounded-full" />
+                  </div>
+                ))
+              ) : (
+                judges.filter((j) => !isJunkJudge(j.name)).map((j, i) => {
+                  const pct = Math.max(3, (j.total_citations / maxCites) * 100);
+                  const active = selected === j.judge_id;
+                  return (
+                    <button
+                      key={j.judge_id}
+                      onClick={() => selectJudge(j.judge_id)}
+                      className={
+                        "w-full text-left px-4 py-3 border-b border-[var(--color-rule)]/15 last:border-0 transition-colors " +
+                        (active ? "bg-[var(--color-seal)]/8" : "hover:bg-[var(--color-paper-2)]")
+                      }
+                    >
+                      <div className="flex justify-between items-baseline mb-1.5">
+                        <span className="font-[family-name:var(--font-display)] text-[15px]">
+                          <span className="text-[var(--color-ink-2)] font-[family-name:var(--font-mono)] text-[16px] mr-2">{i + 1}</span>
+                          {displayJudge(j.name)}
+                        </span>
+                        <span className="font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
+                          {j.total_citations.toLocaleString()} cites &middot; {j.authored} op.
+                        </span>
+                      </div>
+                      <div className="h-1 bg-[var(--color-rule)]/15 rounded-full overflow-hidden">
+                        <div className="h-full bg-[var(--color-seal)] transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
             <p className="mt-3 font-[family-name:var(--font-mono)] text-[16px] text-[var(--color-ink-2)]">
-              Ranked by total inbound citations to authored opinions. Court of Appeals judges are
-              shown with full names; remaining entries are surname-level from the CourtListener
-              dump, pending full disambiguation.
+              {searchMode
+                ? "Searching every authoring judge in the corpus by name · click one for their profile."
+                : "Ranked by total inbound citations to authored opinions. Court of Appeals judges are shown with full names; remaining entries are surname-level from the CourtListener dump, pending full disambiguation."}
             </p>
           </div>
 

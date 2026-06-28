@@ -21,6 +21,7 @@ export {
 export {
   mostCitedDecisions,
   judgeInfluenceRanking,
+  searchJudges,
   judgeProfile,
   citedBy,
   getOpinion,

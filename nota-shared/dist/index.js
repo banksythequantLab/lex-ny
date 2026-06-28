@@ -42,7 +42,7 @@ export { embed, embedBatch, chunkForEmbedding, EMBEDDING_DIMS, EMBEDDING_MODEL, 
 // Retrieval + RAG answer generation
 export { retrieve, answer, answerStream, 
 // Judge + citation-graph analytics (Aurora-native; replaces Neo4j cited-by)
-mostCitedDecisions, judgeInfluenceRanking, judgeProfile, citedBy, getOpinion, 
+mostCitedDecisions, judgeInfluenceRanking, searchJudges, judgeProfile, citedBy, getOpinion, 
 // Brief citation-checker (verify every cite against the corpus)
 checkBrief, } from "./lex/index.js";
 // ============================================================

@@ -153,6 +153,7 @@ export {
   // Judge + citation-graph analytics (Aurora-native; replaces Neo4j cited-by)
   mostCitedDecisions,
   judgeInfluenceRanking,
+  searchJudges,
   judgeProfile,
   citedBy,
   type CitedDecision,

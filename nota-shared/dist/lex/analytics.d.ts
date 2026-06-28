@@ -37,6 +37,12 @@ export declare function judgeInfluenceRanking(opts?: {
     limit?: number;
     minOpinions?: number;
 }): Promise<JudgeInfluence[]>;
+/** Search judges by name (matches any authoring judge in the corpus), ranked by
+ *  citation influence. Powers the /judges search box — reaches the full judges
+ *  table, not just the top-ranked leaderboard. */
+export declare function searchJudges(q: string, opts?: {
+    limit?: number;
+}): Promise<JudgeInfluence[]>;
 /** Full profile for one judge: volume, span, courts, and their most-cited decisions. */
 export declare function judgeProfile(judgeId: string, opts?: {
     topN?: number;

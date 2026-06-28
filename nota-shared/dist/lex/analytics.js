@@ -75,6 +75,31 @@ export async function judgeInfluenceRanking(opts = {}) {
         authored: Number(r.authored), total_citations: Number(r.total_citations),
     }));
 }
+/** Search judges by name (matches any authoring judge in the corpus), ranked by
+ *  citation influence. Powers the /judges search box — reaches the full judges
+ *  table, not just the top-ranked leaderboard. */
+export async function searchJudges(q, opts = {}) {
+    const term = (q || "").trim();
+    if (term.length < 2)
+        return [];
+    const limit = Math.min(50, opts.limit ?? 20);
+    // Escape LIKE wildcards in the user term, then wrap for a contains-match.
+    const like = `%${term.replace(/[\\%_]/g, (m) => "\\" + m)}%`;
+    const { rows } = await getPool().query(`SELECT j.id judge_id, j.full_name name,
+            count(DISTINCT oj.opinion_id)::int authored,
+            COALESCE(SUM(ic.inbound), 0)::int total_citations
+       FROM judges j
+       JOIN opinion_judges oj ON oj.judge_id = j.id AND oj.role = 'author'
+       LEFT JOIN opinion_inbound_counts ic ON ic.opinion_id = oj.opinion_id
+      WHERE j.full_name ILIKE $1 ESCAPE '\\' OR j.normalized_name ILIKE $1 ESCAPE '\\'
+      GROUP BY j.id, j.full_name
+      ORDER BY total_citations DESC, authored DESC
+      LIMIT $2`, [like, limit]);
+    return rows.map((r) => ({
+        judge_id: r.judge_id, name: r.name,
+        authored: Number(r.authored), total_citations: Number(r.total_citations),
+    }));
+}
 /** Full profile for one judge: volume, span, courts, and their most-cited decisions. */
 export async function judgeProfile(judgeId, opts = {}) {
     const topN = Math.min(50, opts.topN ?? 10);
